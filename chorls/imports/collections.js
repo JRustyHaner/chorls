@@ -1,5 +1,12 @@
 import { Meteor } from 'meteor/meteor'
-import { Mongo } from ''
+import { Mongo } from 'meteor/mongo'
 
 //Collections
-const Scores =  new Mongo.Collection('scores');
+export const Scores =  new Mongo.Collection('scores');
+
+//publish the scores
+if (Meteor.isServer) {
+  Meteor.publish('scores', function() {
+    return Scores.find({});
+  });
+}

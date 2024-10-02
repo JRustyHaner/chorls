@@ -18,7 +18,7 @@
 <template name="input">
   <form>
     <label>Title</label>
-    <input type="text" id="input_text" placeholder="Title"><br>
+    <input type="text" id="input_title" placeholder="Title"><br>
     <label>Composer</label>
     <input type="text" id="input_composer" placeholder="Composer"><br>
     <label>Lyricist</label>
@@ -57,10 +57,10 @@
         {{#each scores}}
           <tr>
             <td>
-              {{this.composer}}
+              {{this.title}}
             </td>
             <td>
-              {{this.score}}
+              {{this.composer}}
             </td>
           </tr>
         {{/each}}
