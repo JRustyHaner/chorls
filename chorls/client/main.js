@@ -65,9 +65,13 @@ Template.input.events({
     Meteor.call('addScore', {
       title: document.getElementById('input_title').value,
       composer: document.getElementById('input_composer').value,
-      lyricist: document.getElementById('input_lyricist').value,
+      arranger: document.getElementById('input_arranger').value,
       fuchs: fuchs,
       number_of_copies: document.getElementById('input_number_of_copies').value,
+      number_of_originals: document.getElementById('input_number_of_originals').value,
+      library_number: document.getElementById('library_number').value,
+      section: document.getElementById('section').value,
+      tags: document.getElementById('tags').value,
       notes: document.getElementById('input_notes').value,
     }, function(error, result) {
       if (error) {
