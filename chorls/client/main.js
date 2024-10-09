@@ -2,9 +2,27 @@ import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
+import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
+import { BlazeLayout } from 'meteor/pwix:blaze-layout';
 import './main.html';
 
 Scores = new Mongo.Collection('scores');
+
+//routing using flow-router
+FlowRouter.route('/', {
+  name: 'home',
+  action() {
+    Meteor.callAsync('serverConsole','connected');
+    //if logged in, render the main template with the content set to home
+    //if not logged in, render the main template with the content set to login
+    if (!Meteor.userId()) {
+      BlazeLayout.render('main', {content: 'login'});
+    } else {
+      BlazeLayout.render('main', {content: 'dashboard'});
+    }
+  }
+});
+
 
 
 Template.input.onCreated(function() {
