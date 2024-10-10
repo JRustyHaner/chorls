@@ -61,7 +61,7 @@ Template.input.events({
     if (document.getElementById('input_bass').checked) {
       fuchs += "B"
     }
-    console.log(document.getElementById('input_title').value, document.getElementById('input_composer').value, document.getElementById('input_lyricist').value, fuchs, document.getElementById('input_number_of_copies').value, document.getElementById('input_notes').value);
+    console.log(document.getElementById('input_title').value, document.getElementById('input_composer').value, document.getElementById('input_arranger').value, fuchs, document.getElementById('input_number_of_copies').value, document.getElementById('input_notes').value);
     Meteor.call('addScore', {
       title: document.getElementById('input_title').value,
       composer: document.getElementById('input_composer').value,
@@ -80,5 +80,17 @@ Template.input.events({
         console.log(result);
       }
     });
-  },
+    document.getElementById('input_title').value = '';
+    document.getElementById('input_arranger').value='';
+    document.getElementById('input_number_of_copies').value='';
+    document.getElementById('library_number').value='';
+    document.getElementById('section').value='';
+    document.getElementById('tags').value='',
+    docuement.getElementById('notes').value='',
+    document.getElementById('input_soprano').checked = false;
+    document.getElementById('input_alto').checked = false;
+    document.getElementById('input_tenor').checked = false;
+    document.getElementById('input_bass').checked = false;
+    alert('Score Added');
+  }
 });
