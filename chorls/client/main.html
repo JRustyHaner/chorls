@@ -5,64 +5,304 @@
 
 
 <template name="login">
-  <h1>Login</h1>
-  {{>loginButtons}}
+       <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
+   
+        <div class="row vh-5 justify-content-center">
+          
+            <img src="images/logo.jpeg" class="img-fluid" alt="Responsive image" style="width: 300px; height: 300px;">
+            
+          
+        </div>
+        
+
+      <!--login form, username and password. Also acts as a signup -->
+      <div class="row row-cols-1 justify-content-center">
+                     <p class="lead justify-content-center">Log In or Register to access the CHoRLS Library</p>
+      </div>
+      <div class="row row-cols-1 justify-content-center">
+        <div class="col-3 align-self-center text-center">
+          <form id="loginForm">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password">
+            </div>
+            <button type="submit" class="btn btn-primary" id="login">Log In</button>
+            <button type="submit" class="btn btn-primary" id="signup">Register</button>
+          </form>
+        </div>
+       
+      </div>
+       <!-- footer at bottom of page with GitHub for JRustyHaner-->
+        <div class="row row-cols-12 justify-content-center align-items-center fixed-bottom">
+          <div class="col-3 align-self-center text-center">
+            <p class="text-muted
+            ">CHoRLS is a project of the <a href="https://www.churchoftheriver.org" target="_blank">First Unitarian Church of Memphis</a><br>
+            and is maintained by <a href="
+            https://github.com/JRustyHaner" target="_blank">JRustyHaner</a>
+            </p>
+            <p class="text-muted small">Some content is generative AI. Please contact us if you have any questions or concerns.</p>
+            </div>
+          </div>
+        </div>
+
 </template>
 
+<!-- dashboard template with score searchbox and score list -->
+<template name="dashboard">
+  <!-- results of search, bootstrap table -->
+  <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
+    <div class="row row-cols-1 justify-content-center">
+      <div class="col-12 align-self-center text-center">
+        <table class="table text-left">
+          <thead class="thead-light">
+            <tr>
+              <th>
+                Title
+              </th>
+              <th>
+                Composer
+              </th>
+              <th>
+                Arranger
+              </th>
+              <th>
+                Voice Type
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#if scores}}
+              {{#each scores}}
+                <tr>
+                  <td>
+                    {{this.title}}
+                  </td>
+                  <td>
+                    {{this.composer}}
+                  </td>
+                </tr>
+              {{/each}}
+            {{else}}
+            <tr>
+              <td>
+                No Scores In Database
+              </td>
+            </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+
 <template name="main">
-  <body>
-      <div class="container">
-      <h1>Welcome to CHoRLS</h1>
-      <h3>CHurch of the River Library of Scores</h3>
+    <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
+    {{#if currentUser}}
+     <header class="p-3 mb-3 border-bottom">
+      <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
+        <div class="d-flex align-items-center">
+          <!-- logo -->
+          <img src="images/logo.jpeg" class="img-fluid" alt="Responsive image" style="width: 100px; height: 100px;">
+          <!-- search box -->
+          <form class="w-100 me-3 mx-2" role="search">
+            <input type="search" class="form-control" placeholder="Search..." aria-label="Search" list="list-options" id="search">
+              <datalist id="list-options">
+                {{#if searchOptions}}
+                  {{#each searchOptions}}
+                    <option value="View:{{this._id}}" id="view_score_option" data-id="{{this._id}}">
+                      <b>{{this.field}}:</b> {{this.title}}
+                    </option>
+                  {{/each}}
+                {{/if}}
+                <option value="Add:{{search}}" id="add_score_option" data-id="{{search}}">
+                  Add Score with Title: {{search}}
+                </option>
+              </datalist>
+          </form>
+          <!-- manual search button with arrow icon -->
+          <div class="flex-shrink-0 mx-2">
+            <button class="btn btn-outline-primary" id="search_button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M11.354 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L9.293 8l-2.647 2.646a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708z"/>
+                <path fill-rule="evenodd" d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- add score button -->
+          <div class="flex-shrink-0 mx-2">
+            <button class="btn btn-outline-primary" id="add_score">Add Score</button>
+          </div>
+          <!-- logout button -->
+          <div class="flex-shrink-0 mx-2">
+            <button class="btn btn-outline-primary" id="logout">Log Out</button>    
+          </div>
+        </div>
+      </div>
+    </header>
+    {{/if}}
+  
+
+
+
       <!-- yeild to the template -->
       {{> Template.dynamic template=content}}
-      </div>
-      
+
+    </div>
+
+    
+
+    <!-- footer -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-  </body>  
+  
 </template>
 
 
-
-<template name="input">
-  <form>
-      <div class="form-group">
-        <label for="input_title">Title</label>
-        <input type="text" class="form-control-lg" id="input_title" placeholder="Title"><br>
-        <label>Composer</label>
-        <input type="text" class="form-control-lg" id="input_composer" placeholder="Composer"><br>
-        <label>Arranger</label>
-        <input type="text" class="form-control-lg" id="input_arranger" placeholder="Lyricist"><br>
+<template name="add_score">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form>
+          <div class="form-group">
+            <label for="input_title">Title</label>
+            <input type="text" class="form-control" id="input_title" placeholder="Title">
+          </div>
+          <div class="form-group">
+            <label for="input_composer">Composer</label>
+            <input type="text" class="form-control" id="input_composer" placeholder="Composer">
+          </div>
+          <div class="form-group">
+            <label for="input_arranger">Arranger</label>
+            <input type="text" class="form-control" id="input_arranger" placeholder="Arranger">
+          </div>
+          <div class="form-group">
+            <label>Voice Type (SATB)</label>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="input_soprano">
+              <label for="input_soprano" class="form-check-label">S</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="input_alto">
+              <label for="input_alto" class="form-check-label">A</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="input_tenor">
+              <label for="input_tenor" class="form-check-label">T</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="input_bass">
+              <label for="input_bass" class="form-check-label">B</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="input_number_of_copies">Number of Copies</label>
+            <input type="number" class="form-control" id="input_number_of_copies" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label for="library_number">Library Number</label>
+            <input type="text" class="form-control" id="library_number">
+          </div>
+          <div class="form-group">
+            <label for="section">Section</label>
+            <input type="text" class="form-control" id="section">
+          </div>
+          <div class="form-group">
+            <label for="tags">Tags (separate by spaces)</label>
+            <input type="text" class="form-control" id="tags">
+          </div>
+          <div class="form-group">
+            <label for="input_number_of_originals">Number of Originals</label>
+            <input type="number" class="form-control" id="input_number_of_originals" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label for="input_notes">Notes</label>
+            <textarea class="form-control" id="input_notes" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit_new_score">Add Score</button>
+        </form>
       </div>
-      <b>Fuchs (SATB)</b><br>
-      <div class="form-check">
-        <label for="input_soprano" class="form-check-label">S</label>
-        <input type="checkbox" class="form-check-input" id="input_soprano"><br>
-        <label>A</label>
-        <input type="checkbox" class="form-check-input" id="input_alto"><br>
-        <label>T</label>
-        <input type="checkbox" class="form-check-input" id="input_tenor"><br>
-        <label>B</label>
-        <input type="checkbox"  class="form-check-input" id="input_bass"><br>
-      </div>
-      <div class="form-group">
-        <label>Number of Copies</label><br>
-        <input type="text"  id="input_number_of_copies" placeholder="0"><br>
-        <label>Library Number</label><br>
-        <input type="text" id="library_number"><br>
-        <label>Section</label><br>
-        <input type="text" id="section"><br>
-        <label>Tags (seperate by spaces)</label><br>
-        <input type="text" id="tags"><br>
-        <label>Number of Originals</label><br>
-        <input type="text" id="input_number_of_originals" placeholder="0"><br>
-        <label>Notes</label><br>
-        <textarea id="input_notes"></textarea><br>
-        <button id="submit_new_score">Add Score</button>
     </div>
-  </form>
+  </div>
+</template>
+
+<template name="view_score">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <h2>{{score.title}}</h2>
+        <p><strong>Composer:</strong> {{score.composer}}</p>
+        <p><strong>Arranger:</strong> {{score.arranger}}</p>
+        <p><strong>Voice Type:</strong> {{score.voiceType}}</p>
+        <p><strong>Number of Copies:</strong> {{score.numberOfCopies}}</p>
+        <p><strong>Library Number:</strong> {{score.libraryNumber}}</p>
+        <p><strong>Section:</strong> {{score.section}}</p>
+        <p><strong>Tags:</strong> {{score.tags}}</p>
+        <p><strong>Number of Originals:</strong> {{score.numberOfOriginals}}</p>
+        <p><strong>Notes:</strong> {{score.notes}}</p>
+        <button class="btn btn-primary" id="edit_score">Edit</button>
+        <button class="btn btn-danger" id="delete_score">Delete</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="edit_score">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form>
+          <div class="form-group">
+            <label for="edit_title">Title</label>
+            <input type="text" class="form-control" id="edit_title" value="{{score.title}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_composer">Composer</label>
+            <input type="text" class="form-control" id="edit_composer" value="{{score.composer}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_arranger">Arranger</label>
+            <input type="text" class="form-control" id="edit_arranger" value="{{score.arranger}}">
+          </div>
+            <div class="form-group">
+            <label>Voice Type (SATB)</label>
+            <input type="text" class="form-control" id="edit_voice_type" value="{{score.fuchs}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_number_of_copies">Number of Copies</label>
+            <input type="number" class="form-control" id="edit_number_of_copies" value="{{score.numberOfCopies}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_library_number">Library Number</label>
+            <input type="text" class="form-control" id="edit_library_number" value="{{score.libraryNumber}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_section">Section</label>
+            <input type="text" class="form-control" id="edit_section" value="{{score.section}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_tags">Tags (separate by spaces)</label>
+            <input type="text" class="form-control" id="edit_tags" value="{{score.tags}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_number_of_originals">Number of Originals</label>
+            <input type="number" class="form-control" id="edit_number_of_originals" value="{{score.numberOfOriginals}}">
+          </div>
+          <div class="form-group">
+            <label for="edit_notes">Notes</label>
+            <textarea class="form-control" id="edit_notes" rows="3">{{score.notes}}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit_edit_score">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <template name="viewAll">
@@ -98,12 +338,6 @@
       {{/if}}
     </tbody>
   </table>
-</template>
-
-<template name="dashboard">
-  {{> loginButtons}}
-  {{> input}}
-  {{> viewAll}}
 </template>
 
 <template name="info">
