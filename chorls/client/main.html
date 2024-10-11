@@ -60,6 +60,7 @@
         <table class="table text-left">
           <thead class="thead-light">
             <tr>
+              <th>No.</th>
               <th>
                 Title
               </th>
@@ -78,6 +79,16 @@
             {{#if scores}}
               {{#each scores}}
                 <tr>
+                  <td>
+                    {{#if this.library_number}}
+                      <a href="#" id="view_score" data-id="{{this._id}}">
+                        {{this.library_number}}    
+                      </a>
+                    {{else}}
+                      <a href="#" id="view_score" data-id="{{this._id}}">View
+                      </a>
+                    {{/if}}
+                  </td>
                   <td>
                     {{this.title}}
                   </td>
@@ -108,7 +119,10 @@
       <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
         <div class="d-flex align-items-center">
           <!-- logo -->
-          <img src="images/logo.jpeg" class="img-fluid" alt="Responsive image" style="width: 100px; height: 100px;">
+          <a href="/" class="d-flex align-items-center text-dark text-decoration-none" id="home">
+            CHoRLS
+
+            </a>
           <!-- search box -->
           <form class="w-100 me-3 mx-2" role="search">
             <input type="search" class="form-control" placeholder="Search..." aria-label="Search" list="list-options" id="search">
@@ -116,12 +130,29 @@
                 {{#if searchOptions}}
                   {{#each searchOptions}}
                     <option value="View:{{this._id}}" id="view_score_option" data-id="{{this._id}}">
-                      <b>{{this.field}}:</b> {{this.title}}
+                      <b>{{this.field}}:</b> 
+                      {{this.title}} 
+                      <i>
+                      {{#if this.composer}} 
+                      by {{this.composer}} 
+                      {{/if}} 
+                      {{#if this.arranger}} 
+                        arr {{this.arranger}} 
+                      {{/if}} 
+                      </i>
                     </option>
                   {{/each}}
                 {{/if}}
+                {{#if search}}
                 <option value="Add:{{search}}" id="add_score_option" data-id="{{search}}">
                   Add Score with Title: {{search}}
+                </option>
+                <option value="Show" id="show_all_option">
+                  Show: All Results for {{search}}
+                </option>
+                {{/if}}
+                <option value="ShowAll" id="show_all_option">
+                  Show: All Scores
                 </option>
               </datalist>
           </form>
@@ -133,10 +164,6 @@
                 <path fill-rule="evenodd" d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z"/>
               </svg>
             </button>
-          </div>
-          <!-- add score button -->
-          <div class="flex-shrink-0 mx-2">
-            <button class="btn btn-outline-primary" id="add_score">Add Score</button>
           </div>
           <!-- logout button -->
           <div class="flex-shrink-0 mx-2">
@@ -168,59 +195,74 @@
 <template name="add_score">
   <div class="container">
     <div class="row justify-content-center">
-      <div class="col-md-6">
+      <div class="col-md-10 col-sm-12">
         <form>
           <div class="form-group">
             <label for="input_title">Title</label>
             <input type="text" class="form-control" id="input_title" placeholder="Title">
           </div>
-          <div class="form-group">
-            <label for="input_composer">Composer</label>
-            <input type="text" class="form-control" id="input_composer" placeholder="Composer">
-          </div>
-          <div class="form-group">
-            <label for="input_arranger">Arranger</label>
-            <input type="text" class="form-control" id="input_arranger" placeholder="Arranger">
-          </div>
-          <div class="form-group">
+                      
+            <div class="form-group">  
             <label>Voice Type (SATB)</label>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="input_soprano">
-              <label for="input_soprano" class="form-check-label">S</label>
+            <!-- input box that cant be changed -->
+            <div class="form-row">
+              <div class="form-group col-md-2 col-sm-12">
+                <input type="text" class="form-control" id="input_voice_type" placeholder="SATB" value="SATB" readonly>
+              </div>
+              <div class="form-group col-md-2 col-sm-12">
+                <p>Add Voice:</p>
+              </div>
+              <div class="form-group col-md-8 col-sm-12">
+                <!-- buttons that add soprano (S), alto (A), tenor (T), bass (B) and treble (Tr) -->
+                <button type="button" class="btn btn-primary m-1" id="add_soprano">Soprano</button>
+                <button type="button" class="btn btn-primary m-1" id="add_alto">Alto</button>
+                <button type="button" class="btn btn-primary m-1" id="add_tenor">Tenor</button>
+                <button type="button" class="btn btn-primary m-1" id="add_bass">Bass</button>
+                <!-- clear button that resets the voice type to SATB -->
+                <button type="button" class="btn btn-danger m-1" id="clear_voice_type">Clear</button>
+              </div>
             </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="input_alto">
-              <label for="input_alto" class="form-check-label">A</label>
+          </div>
+            <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="input_composer">Composer</label>
+              <input type="text" class="form-control" id="input_composer" placeholder="Composer">
             </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="input_tenor">
-              <label for="input_tenor" class="form-check-label">T</label>
+            <div class="form-group col-md-6">
+              <label for="input_arranger">Arranger</label>
+              <input type="text" class="form-control" id="input_arranger" placeholder="Arranger">
             </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="input_bass">
-              <label for="input_bass" class="form-check-label">B</label>
             </div>
-          </div>
+
+          <!-- accompaniment input box -->
           <div class="form-group">
-            <label for="input_number_of_copies">Number of Copies</label>
-            <input type="number" class="form-control" id="input_number_of_copies" placeholder="0">
+            <label for="input_accompaniment">Accompaniment</label>
+            <input type="text" class="form-control" id="input_accompaniment" placeholder="Accompaniment">
           </div>
-          <div class="form-group">
-            <label for="library_number">Library Number</label>
-            <input type="text" class="form-control" id="library_number">
-          </div>
-          <div class="form-group">
-            <label for="section">Section</label>
-            <input type="text" class="form-control" id="section">
-          </div>
-          <div class="form-group">
-            <label for="tags">Tags (separate by spaces)</label>
-            <input type="text" class="form-control" id="tags">
-          </div>
-          <div class="form-group">
-            <label for="input_number_of_originals">Number of Originals</label>
-            <input type="number" class="form-control" id="input_number_of_originals" placeholder="0">
-          </div>
+            <div class="form-row">
+            <div class="form-group col-md-4 col-sm-12">
+              <label for="library_number">Library Number</label>
+              <input type="text" class="form-control" id="library_number">
+            </div>
+            <div class="form-group col-md-4 col-sm-12">
+              <label for="input_number_of_copies">Number of Copies</label>
+              <input type="number" class="form-control" id="input_number_of_copies" placeholder="0">
+            </div>
+            <div class="form-group col-md-4 col-sm-12">
+              <label for="input_number_of_originals">Number of Originals</label>
+              <input type="number" class="form-control" id="input_number_of_originals" placeholder="0">
+            </div>
+            </div>
+            <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="tags">Tags (separate by spaces)</label>
+              <input type="text" class="form-control" id="tags">
+            </div>
+            <div class="form-group col-md-6">
+              <label for="section">Section</label>
+              <input type="text" class="form-control" id="section">
+            </div>
+            </div>
           <div class="form-group">
             <label for="input_notes">Notes</label>
             <textarea class="form-control" id="input_notes" rows="3"></textarea>
@@ -236,18 +278,65 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-8">
-        <h2>{{score.title}}</h2>
-        <p><strong>Composer:</strong> {{score.composer}}</p>
-        <p><strong>Arranger:</strong> {{score.arranger}}</p>
-        <p><strong>Voice Type:</strong> {{score.voiceType}}</p>
-        <p><strong>Number of Copies:</strong> {{score.numberOfCopies}}</p>
-        <p><strong>Library Number:</strong> {{score.libraryNumber}}</p>
-        <p><strong>Section:</strong> {{score.section}}</p>
-        <p><strong>Tags:</strong> {{score.tags}}</p>
-        <p><strong>Number of Originals:</strong> {{score.numberOfOriginals}}</p>
-        <p><strong>Notes:</strong> {{score.notes}}</p>
-        <button class="btn btn-primary" id="edit_score">Edit</button>
-        <button class="btn btn-danger" id="delete_score">Delete</button>
+        <label for="view_title"><strong>Title:</strong></label>
+        <h2><input type="text" class="form-control" id="view_title" value="{{selectedScore.title}}" readonly></h2>
+        <div class="form-group">
+          <label for="view_composer"><strong>Composer:</strong></label>
+          <input type="text" class="form-control" id="view_composer" value="{{selectedScore.composer}}" readonly>
+        </div>
+        <div class="form-group">
+          <label for="view_arranger"><strong>Arranger:</strong></label>
+          <input type="text" class="form-control" id="view_arranger" value="{{selectedScore.arranger}}" readonly>
+        </div>
+        <div class="form-group">
+          <label><strong>Voice Type:</strong></label>
+          <div class="form-row">
+            <div class="form-group col-sm-12">
+              <input type="text" class="form-control" id="view_voice_type" value="{{selectedScore.voiceType}}" readonly>
+            </div> 
+         
+            <div class="form-group col-md-10 col-sm-12">
+              <button type="button" class="btn btn-primary m-1" id="view_soprano">Soprano</button>
+              <button type="button" class="btn btn-primary m-1" id="view_alto">Alto</button>
+              <button type="button" class="btn btn-primary m-1" id="view_tenor">Tenor</button>
+              <button type="button" class="btn btn-primary m-1" id="view_bass">Bass</button>
+              <button type="button" class="btn btn-danger m-1" id="clear_voice_type">Clear</button>
+            </div>
+
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label for="view_number_of_originals"><strong>Number of Originals:</strong></label>
+            <input type="number" class="form-control" id="view_number_of_originals" value="{{selectedScore.numberOfOriginals}}" readonly>
+          </div>
+          <div class="form-group col-md-4">
+            <label for="view_number_of_copies"><strong>Number of Copies:</strong></label>
+            <input type="number" class="form-control" id="view_number_of_copies" value="{{selectedScore.numberOfCopies}}" readonly>
+          </div>
+          <div class="form-group col-md-4 col-xs-12">
+            <label for="view_library_number"><strong>Library Number:</strong></label>
+            <input type="text" class="form-control" id="view_library_number" value="{{selectedScore.library_number}}" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-md-6 col-xs-12">
+            <label for="view_section"><strong>Section:</strong></label>
+            <input type="text" class="form-control" id="view_section" value="{{selectedScore.section}}" readonly>
+          </div>
+          <div class="form-group col-md-6 col-xs-12">
+            <label for="view_tags"><strong>Tags:</strong></label>
+            <input type="text" class="form-control" id="view_tags" value="{{selectedScore.tags}}" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="view_notes"><strong>Notes:</strong></label>
+          <textarea class="form-control" id="view_notes" rows="3" readonly>{{selectedScore.notes}}</textarea>
+        </div>
+        <button class="btn btn-primary" id="edit_score">Edit Mode</button>
+        <button class="btn btn-success" id="save_score" disabled>Save Changes</button>
+        <button class="btn btn-danger" id="delete_score" disabled>Delete</button>
       </div>
     </div>
   </div>
@@ -271,8 +360,8 @@
             <input type="text" class="form-control" id="edit_arranger" value="{{score.arranger}}">
           </div>
             <div class="form-group">
-            <label>Voice Type (SATB)</label>
-            <input type="text" class="form-control" id="edit_voice_type" value="{{score.fuchs}}">
+            <label>Voice Types (SATB)</label>
+            <input type="text" class="form-control" id="edit_voice_type" value="{{score.voiceType}}">
           </div>
           <div class="form-group">
             <label for="edit_number_of_copies">Number of Copies</label>
@@ -280,7 +369,7 @@
           </div>
           <div class="form-group">
             <label for="edit_library_number">Library Number</label>
-            <input type="text" class="form-control" id="edit_library_number" value="{{score.libraryNumber}}">
+            <input type="text" class="form-control" id="edit_library_number" value="{{score.library_number}}">
           </div>
           <div class="form-group">
             <label for="edit_section">Section</label>

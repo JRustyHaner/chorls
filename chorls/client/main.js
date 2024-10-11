@@ -111,28 +111,28 @@ Template.main.events({
     scoreByTitle = Scores.find({title: {$regex: search, $options: 'i'}}).fetch();
     scoreByComposer = Scores.find({composer: {$regex: search, $options: 'i'}}).fetch();
     scoreByArranger = Scores.find({arranger: {$regex: search, $options: 'i'}}).fetch();
-    scoreByFuchs = Scores.find({fuchs: {$regex: search, $options: 'i'}}).fetch();
+    scoreByvoiceType = Scores.find({voiceType: {$regex: search, $options: 'i'}}).fetch();
     scoreByNotes = Scores.find({notes: {$regex: search, $options: 'i'}}).fetch();
     scoreByTags = Scores.find({tags: {$regex: search, $options: 'i'}}).fetch();
     //combine all the search results in an object {title: title, field: field, _id: _id}
     searchScores = [];
     searchScores = searchScores.concat(scoreByTitle.map(function(score) {
-      return {title: score.title, field: "title", _id: score._id};
+      return {title: score.title, field: "title", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByComposer.map(function(score) {
-      return {title: score.title, field: "composer", _id: score._id};
+      return {title: score.title, field: "composer", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByArranger.map(function(score) {
-      return {title: score.title, field: "arranger", _id: score._id};
+      return {title: score.title, field: "arranger", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
-    searchScores = searchScores.concat(scoreByFuchs.map(function(score) {
-      return {title: score.title, field: "fuchs", _id: score._id};
+    searchScores = searchScores.concat(scoreByvoiceType.map(function(score) {
+      return {title: score.title, field: "voiceType", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByNotes.map(function(score) {
-      return {title: score.title, field: "notes", _id: score._id};
+      return {title: score.title, field: "notes", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByTags.map(function(score) {
-      return {title: score.title, field: "tags", _id: score._id};
+      return {title: score.title, field: "tags", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
 
     console.log(searchScores);
@@ -159,12 +159,33 @@ Template.main.events({
     }
     //if the value starts with View:, we want to redirect to the view_score page and send the search value
     if (document.getElementById('search').value.startsWith('View:')) {
-      
-      FlowRouter.go('/view_score/' + document.getElementById('search').value);
+      //remove the View: from the search value
+      instance.search.set(document.getElementById('search').value.substring(5));
+      console.log(instance.search.get());
+      FlowRouter.go('/view_score/' + instance.search.get());
       document.getElementById('search').value = '';
     }
     
+  },  //viewScore
+  'click #view_score'(event, instance) {
+    event.preventDefault();
+    //get the id from the link's data-id attribute
+    var id = event.target.getAttribute('data-id');
+    console.log(id);
+    //redirect to the view_score page with the search value
+    FlowRouter.go('/view_score/' + id);
+  },
+  //home button click
+  'click #home'(event, instance) {
+    event.preventDefault();
+    //redirect to the home page
+    FlowRouter.go('/');
   }
+});
+//main subscription
+Template.main.onCreated(function() {
+  //subscribe to the scores publication
+  Meteor.subscribe('scores');
 });
 
 //view score onCreated
@@ -183,6 +204,7 @@ Template.view_score.onRendered(function() {
   score = Scores.findOne({_id: search});
   //set the selected score reactive var to the score
   this.selectedScore.set(score);
+  this.edit = new ReactiveVar(false);
 });
 
 //view score helpers
@@ -190,7 +212,178 @@ Template.view_score.helpers({
   //selected score
   selectedScore() {
     return Template.instance().selectedScore.get();
+  },
+  //edit
+  edit() {
+    return Template.instance().edit.get();
   }
+});
+
+//view score events
+Template.view_score.events({
+  //edit button click, enables all the input field (they are readonly by default)
+  'click #edit_score'(event, instance) {
+    event.preventDefault();
+    //get all input fields
+    var inputs = document.getElementsByTagName('input');
+    //enable all input fields
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].readOnly = false;
+    }
+    //enable the notes textarea
+    document.getElementById('view_notes').readOnly = false;
+    //enable the save and delete buttons
+    document.getElementById('save_score').disabled = false;
+    document.getElementById('delete_score').disabled = false;
+  },
+  //save button click, saves the changes to the score save_score
+  'click #save_score'(event, instance) {
+    //fields are the same as the input fields in add_score, except input is replaced with view
+    event.preventDefault();
+    console.log("saving score");
+    //get the selected score
+    var score = instance.selectedScore.get();
+    //get all the input fields
+    var title = document.getElementById('view_title').value;
+    var composer = document.getElementById('view_composer').value;
+    var arranger = document.getElementById('view_arranger').value;
+    var voiceType = document.getElementById('view_voice_type').value;
+    var number_of_copies = document.getElementById('view_number_of_copies').value;
+    var number_of_originals = document.getElementById('view_number_of_originals').value;
+    var library_number = document.getElementById('view_library_number').value;
+    var section = document.getElementById('view_section').value;
+    var tags = document.getElementById('view_tags').value;
+    var notes = document.getElementById('view_notes').value;
+    //make a meteor async call to update the score
+    score =
+    {
+      _id: score._id,
+      title: title,
+      composer: composer,
+      arranger: arranger,
+      voiceType: voiceType,
+      number_of_copies: number_of_copies,
+      number_of_originals: number_of_originals,
+      library_number: library_number,
+      section: section,
+      tags: tags,
+      notes: notes,
+    }
+    Meteor.call('updateScore', {
+      _id: score._id,
+      title: title,
+      composer: composer,
+      arranger: arranger,
+      voiceType: voiceType,
+      number_of_copies: number_of_copies,
+      number_of_originals: number_of_originals,
+      library_number: library_number,
+      section: section,
+      tags: tags,
+      notes: notes,
+    }, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    //disable all input fields except #search
+    var inputs = document.getElementsByTagName('input');
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i].id != 'search') {
+        inputs[i].readOnly = true;
+      }
+    }
+    //disable the notes textarea
+    document.getElementById('view_notes').readOnly = true;
+    alert('Score Saved');
+  },
+  //delete button click, deletes the score
+  'click #delete_score'(event, instance) {
+    event.preventDefault();
+    //get the selected score
+    var score = instance.selectedScore.get();
+    //make a meteor async call to delete the score
+    Meteor.call('deleteScore', score._id, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    alert('Score Deleted');
+    //redirect to the home page
+    FlowRouter.go('/');
+  },
+  //voice type buttons (view_soprano, view_alto, view_tenor, view_bass) adds the voice type to the view_voice_type
+  'click #view_soprano'(event, instance) {
+    event.preventDefault();
+    //get the view_voice_type value and add S for soprano in the correct order
+    var voice_type = document.getElementById('view_voice_type').value;
+    voice_type = 'S' + voice_type;
+    document.getElementById('view_voice_type').value = voice_type;
+  },
+  'click #view_alto'(event, instance) {
+    event.preventDefault();
+    //get the view_voice_type value and add A for alto in the correct order
+    var voice_type = document.getElementById('view_voice_type').value;
+    //find the last capital S and add A after it. If there is no S, add A at the beginning
+    var index = voice_type.lastIndexOf('S');
+    if (index == -1) {
+      voice_type = 'A' + voice_type;
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'A' + voice_type.substring(index + 1);
+    }
+    document.getElementById('view_voice_type').value = voice_type;
+  },
+  'click #view_tenor'(event, instance) {
+    event.preventDefault();
+    //get the view_voice_type value and add T for tenor in the correct order
+    var voice_type = document.getElementById('view_voice_type').value;
+    //find the last capital A and add T after it. If there is no A, add T after the last S, if there is no S, add T at the beginning
+    var index = voice_type.lastIndexOf('A');
+    if (index == -1) {
+      index = voice_type.lastIndexOf('S');
+      if (index == -1) {
+        voice_type = 'T' + voice_type;
+      } else {
+        voice_type = voice_type.substring(0, index + 1) + 'T' + voice_type.substring(index + 1);
+      }
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'T' + voice_type.substring(index + 1);
+    }
+    document.getElementById('view_voice_type').value = voice_type;
+  },
+  'click #view_bass'(event, instance) {
+    event.preventDefault();
+    //get the view_voice_type value and add B for bass in the correct order
+    var voice_type = document.getElementById('view_voice_type').value;
+    //find the last capital T and add B after it. If there is no T, add B after the last A, if there is no A, add B after the last S, if there is no S, add B at the beginning
+    var index = voice_type.lastIndexOf('T');
+    if (index == -1) {
+      index = voice_type.lastIndexOf('A');
+      if (index == -1) {
+        index = voice_type.lastIndexOf('S');
+        if (index == -1) {
+          voice_type = 'B' + voice_type;
+        } else {
+          voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+        }
+      } else {
+        voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+      }
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+    }
+    document.getElementById('view_voice_type').value = voice_type;
+  },
+  //clear_voice_type button clears view_voice_type
+  'click #clear_voice_type'(event, instance) {
+    event.preventDefault();
+    document.getElementById('view_voice_type').value = '';
+  }
+
 });
 
 
@@ -205,7 +398,7 @@ Template.add_score.onCreated(function() {
 //onload for add_score
 Template.add_score.onRendered(function() {
   //get the search value from the flow router params
-  var search = FlowRouter.getParam('search');
+  var search = FlowRouter.getParam('search') || "";
   console.log("search: " + search);
   //set the search value to the search bar
   document.getElementById('input_title').value = search;
@@ -232,25 +425,12 @@ Template.add_score.events({
     //make a meteor async call to add a score. An object with the following fields should be passed to the method:
     //title, composer, lyricist, fuchs, number_of_copies, notes. we get that from the input fields
     //the fuchs scale are from input_soprano, input_alto, input_tenor, input_bass. if soprano
-    fuchs = ""
-    if (document.getElementById('input_soprano').checked) {
-      fuchs += "S"
-    }
-    if (document.getElementById('input_alto').checked) {
-      fuchs += "A"
-    }
-    if (document.getElementById('input_tenor').checked) {
-      fuchs += "T"
-    }
-    if (document.getElementById('input_bass').checked) {
-      fuchs += "B"
-    }
-    console.log(document.getElementById('input_title').value, document.getElementById('input_composer').value, document.getElementById('input_arranger').value, fuchs, document.getElementById('input_number_of_copies').value, document.getElementById('input_notes').value);
+    console.log(document.getElementById('input_title').value, document.getElementById('input_composer').value, document.getElementById('input_arranger').value, document.getElementById('input_voice_type'), document.getElementById('input_number_of_copies').value, document.getElementById('input_notes').value);
     Meteor.call('addScore', {
       title: document.getElementById('input_title').value,
       composer: document.getElementById('input_composer').value,
       arranger: document.getElementById('input_arranger').value,
-      fuchs: fuchs,
+      voiceType: document.getElementById('input_voice_type').value,
       number_of_copies: document.getElementById('input_number_of_copies').value,
       number_of_originals: document.getElementById('input_number_of_originals').value,
       library_number: document.getElementById('library_number').value,
@@ -276,6 +456,73 @@ Template.add_score.events({
     document.getElementById('input_tenor').checked = false;
     document.getElementById('input_bass').checked = false;
     alert('Score Added');
+  },
+  //SATB buttons (add_soprano, add_alto, add_tenor, add_bass, add_treble adds the voice type to the input_voice_type). It must be in order of SATB
+  'click #add_soprano'(event, instance) {
+    event.preventDefault();
+    //get the input_voice_type value and add S for soprano in the correct order
+    var voice_type = document.getElementById('input_voice_type').value;
+    voice_type = 'S' + voice_type;
+    document.getElementById('input_voice_type').value = voice_type;
+  },
+  'click #add_alto'(event, instance) {
+    event.preventDefault();
+    //get the input_voice_type value and add A for alto in the correct order
+    var voice_type = document.getElementById('input_voice_type').value;
+    //find the last capital S and add A after it. If there is no S, add A at the beginning
+    var index = voice_type.lastIndexOf('S');
+    if (index == -1) {
+      voice_type = 'A' + voice_type;
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'A' + voice_type.substring(index + 1);
+    }
+    document.getElementById('input_voice_type').value = voice_type;
+  },
+  'click #add_tenor'(event, instance) {
+    event.preventDefault();
+    //get the input_voice_type value and add T for tenor in the correct order
+    var voice_type = document.getElementById('input_voice_type').value;
+    //find the last capital A and add T after it. If there is no A, add T after the last S, if there is no S, add T at the beginning
+    var index = voice_type.lastIndexOf('A');
+    if (index == -1) {
+      index = voice_type.lastIndexOf('S');
+      if (index == -1) {
+        voice_type = 'T' + voice_type;
+      } else {
+        voice_type = voice_type.substring(0, index + 1) + 'T' + voice_type.substring(index + 1);
+      }
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'T' + voice_type.substring(index + 1);
+    }
+    document.getElementById('input_voice_type').value = voice_type;
+  },
+  'click #add_bass'(event, instance) {
+    event.preventDefault();
+    //get the input_voice_type value and add B for bass in the correct order
+    var voice_type = document.getElementById('input_voice_type').value;
+    //find the last capital T and add B after it. If there is no T, add B after the last A, if there is no A, add B after the last S, if there is no S, add B at the beginning
+    var index = voice_type.lastIndexOf('T');
+    if (index == -1) {
+      index = voice_type.lastIndexOf('A');
+      if (index == -1) {
+        index = voice_type.lastIndexOf('S');
+        if (index == -1) {
+          voice_type = 'B' + voice_type;
+        } else {
+          voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+        }
+      } else {
+        voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+      }
+    } else {
+      voice_type = voice_type.substring(0, index + 1) + 'B' + voice_type.substring(index + 1);
+    }
+    document.getElementById('input_voice_type').value = voice_type;
+  },
+  //clear_voice_type button clears input_voice_type
+  'click #clear_voice_type'(event, instance) {
+    event.preventDefault();
+    document.getElementById('input_voice_type').value = '';
   }
 });
 
@@ -316,5 +563,5 @@ Template.login.events({
         BlazeLayout.render('main', {content: 'dashboard'});
       }
     });
-  }
+  },
 });
