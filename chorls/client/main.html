@@ -9,7 +9,7 @@
    
         <div class="row vh-5 justify-content-center">
           
-            <img src="images/logo.jpeg" class="img-fluid" alt="Responsive image" style="width: 300px; height: 300px;">
+            <img src="{{logo}}" class="img-fluid" alt="Responsive image" style="width: 300px; height: 300px;">
             
           
         </div>
@@ -111,6 +111,80 @@
   </div>
 </template>
 
+<!-- email and password change template for first login -->
+<template name="reset">
+  <div class="container">
+    <div class="row justify-content-center">
+      <p>Your account has been flagged for a password reset. Please confirm your email and choose a new password.</p>
+      <div class="col-md-6">
+        <form>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password">
+          </div>
+          <button type="submit" class="btn btn-primary" id="reset">Change Admin</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- user management tempalte -->
+<template name="userAdmin">
+  <div class="container">
+    {{#if isInRole 'admin'}}
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+        <h2>User Management</h2>
+        <p>Use this page to delete, promote, and demote users.</p>
+        <hr>
+      </div>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#if users}}
+              {{#each users}}
+                <tr>
+                  <td>{{this.username}}</td>
+                  <td>{{this.role}}</td>
+                  <td>
+                    <!-- delete_user, promote_user, demote_user -->
+                    <button class="btn btn-danger" id="delete_user" data-id="{{this._id}}">Delete</button>
+                    <button class="btn btn-primary" id="promote_user" data-id="{{this._id}}">Promote</button>
+                    <button class="btn btn-primary" id="demote_user" data-id="{{this._id}}">Demote</button>
+                  </td>
+                </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td>No Users</td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{else}}
+    <div class="row justify-content-center">
+      <p>You are not authorized to view this page.</p>
+    </div>
+    {{/if}}
+  </div>
+</template>
+
 
 <template name="main">
     <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
@@ -120,7 +194,7 @@
         <div class="d-flex align-items-center">
           <!-- logo -->
           <a href="/" class="d-flex align-items-center text-dark text-decoration-none" id="home">
-            CHoRLS
+            <img src="{{logo}}" class="img-fluid" alt="Responsive image" style="width: 100px; height: 0px;">
 
             </a>
           <!-- search box -->
@@ -165,10 +239,21 @@
               </svg>
             </button>
           </div>
-          <!-- logout button -->
-          <div class="flex-shrink-0 mx-2">
-            <button class="btn btn-outline-primary" id="logout">Log Out</button>    
-          </div>
+          <!-- admin buttons -->
+            <div class="flex-shrink-0 mx-2 dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <!-- icon for dropdown hamburger -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+                <path d="M9 1.5a1 1 0 0 1 1 1V3a1 1 0 0 1-2 0V2.5a1 1 0 0 1 1-1zm0 6a1 1 0 0 1 1 1v.5a1 1 0 0 1-2 0V8.5a1 1 0 0 1 1-1zm0 6a1 1 0 0 1 1 1v.5a1 1 0 0 1-2 0v-.5a1 1 0 0 1 1-1z"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" aria-labelledby="userMenu">
+              {{#if isInRole 'admin'}}
+              <a class="dropdown-item" href="#" id="admin">Admin</a>
+              {{/if}}
+              <a class="dropdown-item" href="#" id="logout">Log Out</a>
+            </div>
+            </div>
         </div>
       </div>
     </header>

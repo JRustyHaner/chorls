@@ -4,6 +4,11 @@ import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
 import { BlazeLayout } from 'meteor/pwix:blaze-layout';
+import { Accounts } from 'meteor/accounts-base';
+
+//roles
+import { Roles } from 'meteor/alanning:roles';
+
 import './main.html';
 
 Scores = new Mongo.Collection('scores');
@@ -12,16 +17,14 @@ Scores = new Mongo.Collection('scores');
 FlowRouter.route('/', {
   name: 'home',
   action() {
+    //if admin, subscribe to all users
+    if (Roles.userIsInRole(Meteor.userId(), 'admin')) {
+      Meteor.subscribe('allUsers');
+    } 
     Meteor.callAsync('serverConsole','connected');
     //if logged in, render the main template with the content set to home
     //if not logged in, render the main template with the content set to login
-    if (!Meteor.userId()) {
-      Meteor.callAsync('serverConsole','not logged in');
-      BlazeLayout.render('main', {content: 'login'});
-    } else {
-      Meteor.callAsync('serverConsole','logged in as ' + Meteor.userId());
-      BlazeLayout.render('main', {content: 'dashboard'});
-    }
+    BlazeLayout.render('main', {content: Meteor.userId() ? 'dashboard' : 'login'});
   }
 });
 
@@ -29,6 +32,11 @@ FlowRouter.route('/', {
 FlowRouter.route('/add_score/:search', {
   name: 'add_score',
   action(params) {
+    //if the user isnt logged in, redirect to the login page
+    if (!Meteor.userId()) {
+      Meteor.callAsync('serverConsole','WARNING: unauthorized access to add_score');
+      BlazeLayout.render('main', {content: 'login'});
+    }
     console.log("add_score, search: " + params.search);
     //render the main template with the content set to add_score, send the search value to the template
     BlazeLayout.render('main', {content: 'add_score', search: params.search});
@@ -39,6 +47,11 @@ FlowRouter.route('/add_score/:search', {
 FlowRouter.route('/add_score', {
   name: 'add_score',
   action() {
+    //if the user isnt logged in, redirect to the login page
+    if (!Meteor.userId()) {
+      Meteor.callAsync('serverConsole','WARNING: unauthorized access to add_score');
+      BlazeLayout.render('main', {content: 'login'});
+    }
     console.log("add_score");
     //render the main template with the content set to add_score
     BlazeLayout.render('main', {content: 'add_score'});
@@ -49,9 +62,31 @@ FlowRouter.route('/add_score', {
 FlowRouter.route('/view_score/:search', {
   name: 'view_score',
   action(params) {
+    //if the user isnt logged in, redirect to the login page
+    if (!Meteor.userId()) {
+      Meteor.callAsync('serverConsole','WARNING: unauthorized access to view_score');
+      BlazeLayout.render('main', {content: 'login'});
+    }
     console.log("view_score, search: " + params.search);
     //render the main template with the content set to view_score, send the search value to the template
     BlazeLayout.render('main', {content: 'view_score', search: params.search});
+  }
+});
+
+//userAdmin route only for administrators
+FlowRouter.route('/userAdmin', {
+  name: 'userAdmin',
+  action: function() {
+    //if the user isnt logged in or isnt an admin, redirect to the login page
+    BlazeLayout.render('main', {content: 'userAdmin'});
+  }
+});
+
+//reset route
+FlowRouter.route('/adminReset', {
+  name: 'adminReset',
+  action() {
+    BlazeLayout.render('main', {content: 'adminReset'});
   }
 });
 
@@ -70,12 +105,21 @@ Template.main.helpers({
   },
   search() {
     return Template.instance().search.get();
+  },
+  isAdministrator: async function() {
+    return await Roles.userIsInRoleAsync(Meteor.userId(), 'admin');
   }
 });
 
 //template for isUserLoggedIn
 Template.registerHelper('isUserLoggedIn', function() {
   return Meteor.userId();
+});
+
+//logo image
+Template.registerHelper('logo', function() {
+  //return full url to /images/logo.png
+  return document.location.origin + '/images/logo.jpeg';
 });
 
 
@@ -94,10 +138,15 @@ Template.main.events({
       }
     });
   },
+  'click #admin'(event, instance) {
+    event.preventDefault();
+    //redirect to the userAdmin page
+    BlazeLayout.render('main', {content: 'userAdmin'});
+  },
   //add_score button click
   'click #add_score'(event, instance) {
     //redirect to the add_score page
-    FlowRouter.go('/add_score');
+    BlazeLayout.render('main', {content: 'add_score'});
   },
   //search bar change
   'keyup #search'(event, instance) {
@@ -155,14 +204,14 @@ Template.main.events({
       
       instance.search.set(document.getElementById('search').value.substring(4));
       document.getElementById('search').value = '';
-      FlowRouter.go('/add_score/' + instance.search.get());
+      BlazeLayout.render('main', {content: 'add_score', search: instance.search.get()});
     }
     //if the value starts with View:, we want to redirect to the view_score page and send the search value
     if (document.getElementById('search').value.startsWith('View:')) {
       //remove the View: from the search value
       instance.search.set(document.getElementById('search').value.substring(5));
       console.log(instance.search.get());
-      FlowRouter.go('/view_score/' + instance.search.get());
+      BlazeLayout.render('main', {content: 'view_score', search: instance.search.get()});
       document.getElementById('search').value = '';
     }
     
@@ -173,13 +222,13 @@ Template.main.events({
     var id = event.target.getAttribute('data-id');
     console.log(id);
     //redirect to the view_score page with the search value
-    FlowRouter.go('/view_score/' + id);
+    BlazeLayout.render('main', {content: 'view_score', search: id});
   },
   //home button click
   'click #home'(event, instance) {
     event.preventDefault();
     //redirect to the home page
-    FlowRouter.go('/');
+    BlazeLayout.render('main', {content: 'dashboard'});
   }
 });
 //main subscription
@@ -407,6 +456,110 @@ Template.add_score.onRendered(function() {
 });
 
 
+//userAdmin Template helpers
+Template.userAdmin.helpers({
+  //all users
+  users: async function() {
+    //return email and role
+  users =  Meteor.users.find({}).fetch();
+  //add roles to the users
+  users = users.map(async function(user) {
+    user.roles = await Roles.getRolesForUserAsync(user._id);
+    return user;
+  });
+  return users;
+},
+});
+//userAdmin Template events
+Template.userAdmin.events({
+  //add_user button click
+  'click #add_user'(event, instance) {
+    event.preventDefault();
+    //get the email and role from the input fields
+    var email = document.getElementById('email').value;
+    var role = document.getElementById('role').value;
+    //make a meteor async call to add a user
+    Meteor.call('addUser', email, role, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    document.getElementById('email').value = '';
+    document.getElementById('role').value = '';
+    alert('User Added');
+  },
+  //delete_user button click
+  'click #delete_user'(event, instance) {
+    event.preventDefault();
+    //get the email from the data-id attribute of the button
+    var email = event.target.getAttribute('data-id');
+    //make a meteor async call to delete a user
+    Meteor.call('deleteUser', email, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    alert('User Deleted');
+  },
+  //promote_user button click
+  'click #promote_user'(event, instance) {
+    event.preventDefault();
+    //get the email from the data-id attribute of the button
+    var email = event.target.getAttribute('data-id');
+    
+    //make a meteor async call to promote a user
+    Meteor.call('promoteUser', email, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    document.getElementById('email').value = '';
+    alert('User Promoted');
+  },
+  //demote_user button click
+  'click #demote_user'(event, instance) {
+    event.preventDefault();
+    //get the email from the data-id attribute of the button
+    var email = event.target.getAttribute('data-id');
+    //make a meteor async call to demote a user
+    Meteor.call('demoteUser', email, function(error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log(result);
+      }
+    });
+    document.getElementById('email').value = '';
+    alert('User Demoted');
+  }
+});
+
+//flag_for_reset Template events, template name reset
+Template.reset.events({
+  //reset button click
+  'click #reset': async function(event, instance) {
+    event.preventDefault();
+    //get the email from the input field
+    var email = document.getElementById('email').value;
+    var password = document.getElementById('password').value;
+    //make a meteor async call to reset a user
+    await Meteor.callAsync('updateUser', Meteor.userId(), email, password);
+    document.getElementById('email').value = '';
+    document.getElementById('password').value = '';
+    //redirect to the home page
+    //logout
+    Meteor.logout();
+    BlazeLayout.render('main', {content: 'login'});
+  }
+});
+
+
 Template.dashboard.helpers({
   //all scores
   scores() {
@@ -534,13 +687,22 @@ Template.login.events({
     var username = document.getElementById('email').value;
     var password = document.getElementById('password').value;
     //make a meteor async call to login
-    Meteor.loginWithPassword(username, password, function(error) {
+    Meteor.loginWithPassword(username, password, async function(error) {
       if (error) {
         console.log(error);
         alert('Invalid Username or Password, please try again');
       } else {
+        //if profile.flagged_for_reset is true, redirect to the reset page if the user is an admin, otherwise redirect to the home page
+        user = Meteor.user();
+        Meteor.callAsync('serverConsole', 'logged in as ' + user + 'with roles ' + await Roles.getRolesForUserAsync(user._id));
+        if (user.flag_for_reset) {
+          Meteor.callAsync('serverConsole', 'redirecting to reset');
+          BlazeLayout.render('main', {content: 'reset'});
+        } else {
+          Meteor.callAsync('serverConsole', 'redirecting to dashboard');
+          BlazeLayout.render('main', {content: 'dashboard'});
+        }
         console.log("logged in");
-        BlazeLayout.render('main', {content: 'dashboard'});
       }
     });
   },
@@ -550,7 +712,7 @@ Template.login.events({
     //get the username and password from the input fields
     var username = document.getElementById('email').value;
     var password = document.getElementById('password').value;
-    //make a meteor async call to register
+    //make a meteor async call to register.
     Accounts.createUser({
       username: username,
       password: password,
