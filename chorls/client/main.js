@@ -24,71 +24,10 @@ FlowRouter.route('/', {
     Meteor.callAsync('serverConsole','connected');
     //if logged in, render the main template with the content set to home
     //if not logged in, render the main template with the content set to login
-    BlazeLayout.render('main', {content: Meteor.userId() ? 'dashboard' : 'login'});
+    BlazeLayout.render('main', {content: Meteor.userId() ? 'dashboard' : 'login', scores: Scores.find({}).fetch()});
   }
 });
 
-//flow router for add_score
-FlowRouter.route('/add_score/:search', {
-  name: 'add_score',
-  action(params) {
-    //if the user isnt logged in, redirect to the login page
-    if (!Meteor.userId()) {
-      Meteor.callAsync('serverConsole','WARNING: unauthorized access to add_score');
-      BlazeLayout.render('main', {content: 'login'});
-    }
-    console.log("add_score, search: " + params.search);
-    //render the main template with the content set to add_score, send the search value to the template
-    BlazeLayout.render('main', {content: 'add_score', search: params.search});
-  }
-});
-
-//add score with no search value
-FlowRouter.route('/add_score', {
-  name: 'add_score',
-  action() {
-    //if the user isnt logged in, redirect to the login page
-    if (!Meteor.userId()) {
-      Meteor.callAsync('serverConsole','WARNING: unauthorized access to add_score');
-      BlazeLayout.render('main', {content: 'login'});
-    }
-    console.log("add_score");
-    //render the main template with the content set to add_score
-    BlazeLayout.render('main', {content: 'add_score'});
-  }
-});
-
-//view score with the search value
-FlowRouter.route('/view_score/:search', {
-  name: 'view_score',
-  action(params) {
-    //if the user isnt logged in, redirect to the login page
-    if (!Meteor.userId()) {
-      Meteor.callAsync('serverConsole','WARNING: unauthorized access to view_score');
-      BlazeLayout.render('main', {content: 'login'});
-    }
-    console.log("view_score, search: " + params.search);
-    //render the main template with the content set to view_score, send the search value to the template
-    BlazeLayout.render('main', {content: 'view_score', search: params.search});
-  }
-});
-
-//userAdmin route only for administrators
-FlowRouter.route('/userAdmin', {
-  name: 'userAdmin',
-  action: function() {
-    //if the user isnt logged in or isnt an admin, redirect to the login page
-    BlazeLayout.render('main', {content: 'userAdmin'});
-  }
-});
-
-//reset route
-FlowRouter.route('/adminReset', {
-  name: 'adminReset',
-  action() {
-    BlazeLayout.render('main', {content: 'adminReset'});
-  }
-});
 
 
 //reactive var for the search bar
@@ -123,6 +62,14 @@ Template.registerHelper('logo', function() {
 });
 
 
+//template helper for dashboard
+Template.dashboard.helpers({
+  //scores
+  scores() {
+    console.log(Scores.find({}).fetch());
+    return Scores.find({}).fetch();
+  }
+});
 //general events
 Template.main.events({
   'click #logout'(event, instance) {
@@ -195,9 +142,10 @@ Template.main.events({
     }
   },
   //input property change
-  'input #search'(event, instance) {
+  'input #search': function(event, instance) {
     //we are checking if the value starts with Add:, if it is, we want to redirect to the add_score page and send the search value
     //empty the search bar
+    console.log(document.getElementById('search').value);
 
     if (document.getElementById('search').value.startsWith('Add:')) {
       //remove the Add: from the search value
@@ -209,20 +157,22 @@ Template.main.events({
     //if the value starts with View:, we want to redirect to the view_score page and send the search value
     if (document.getElementById('search').value.startsWith('View:')) {
       //remove the View: from the search value
-      instance.search.set(document.getElementById('search').value.substring(5));
-      console.log(instance.search.get());
-      BlazeLayout.render('main', {content: 'view_score', search: instance.search.get()});
+      id = document.getElementById('search').value.substring(5);
+      score = Scores.findOne({_id: id});
+      console.log(id, JSON.stringify(score));
+      BlazeLayout.render('main', {content: 'view_score', score: score});
       document.getElementById('search').value = '';
     }
     
   },  //viewScore
-  'click #view_score'(event, instance) {
+  'click #view_score': async function(event, instance) {
     event.preventDefault();
     //get the id from the link's data-id attribute
     var id = event.target.getAttribute('data-id');
-    console.log(id);
+    score = await Scores.findOneAsync({_id: id});
+    console.log(id, score);
     //redirect to the view_score page with the search value
-    BlazeLayout.render('main', {content: 'view_score', search: id});
+    BlazeLayout.render('main', {content: 'view_score', score: score});
   },
   //home button click
   'click #home'(event, instance) {
@@ -248,10 +198,9 @@ Template.view_score.onCreated(function() {
 //view score onRendered
 Template.view_score.onRendered(function() {
   //get the search value from the flow router params
-  var search = FlowRouter.getParam('search');
-  //get the score that has the search value in the title
-  score = Scores.findOne({_id: search});
-  //set the selected score reactive var to the score
+  var score = Blaze.getData();
+  
+  console.log("score: " + score);
   this.selectedScore.set(score);
   this.edit = new ReactiveVar(false);
 });
@@ -291,7 +240,8 @@ Template.view_score.events({
     event.preventDefault();
     console.log("saving score");
     //get the selected score
-    var score = instance.selectedScore.get();
+    //the score id comes from a span with the id of view_id
+    var scoreID = document.getElementById('view_id').innerHTML;
     //get all the input fields
     var title = document.getElementById('view_title').value;
     var composer = document.getElementById('view_composer').value;
@@ -306,7 +256,7 @@ Template.view_score.events({
     //make a meteor async call to update the score
     score =
     {
-      _id: score._id,
+      _id: scoreID,
       title: title,
       composer: composer,
       arranger: arranger,
@@ -350,11 +300,11 @@ Template.view_score.events({
   },
   //delete button click, deletes the score
   'click #delete_score'(event, instance) {
-    event.preventDefault();
+    var scoreID = document.getElementById('view_id').innerHTML;
     //get the selected score
     var score = instance.selectedScore.get();
     //make a meteor async call to delete the score
-    Meteor.call('deleteScore', score._id, function(error, result) {
+    Meteor.call('deleteScore', scoreID , function(error, result) {
       if (error) {
         console.log(error);
       } else {
@@ -363,7 +313,7 @@ Template.view_score.events({
     });
     alert('Score Deleted');
     //redirect to the home page
-    FlowRouter.go('/');
+    BlazeLayout.render('main', {content: 'dashboard'});
   },
   //voice type buttons (view_soprano, view_alto, view_tenor, view_bass) adds the voice type to the view_voice_type
   'click #view_soprano'(event, instance) {
@@ -446,13 +396,7 @@ Template.add_score.onCreated(function() {
 
 //onload for add_score
 Template.add_score.onRendered(function() {
-  //get the search value from the flow router params
-  var search = FlowRouter.getParam('search') || "";
-  console.log("search: " + search);
-  //set the search value to the search bar
-  document.getElementById('input_title').value = search;
-  //set the title reactive var to the search value
-  this.title.set(search);
+
 });
 
 
@@ -560,14 +504,6 @@ Template.reset.events({
 });
 
 
-Template.dashboard.helpers({
-  //all scores
-  scores() {
-    scores = Scores.find({}).fetch();
-    console.log(scores);
-    return scores;
-  },
-});
 
 Template.add_score.events({
   //input_title, input_composer, input_lyricist, input_fuchs, input_number_of_copies, input_notes
@@ -604,10 +540,7 @@ Template.add_score.events({
     document.getElementById('section').value='';
     document.getElementById('tags').value='',
     document.getElementById('input_notes').value='',
-    document.getElementById('input_soprano').checked = false;
-    document.getElementById('input_alto').checked = false;
-    document.getElementById('input_tenor').checked = false;
-    document.getElementById('input_bass').checked = false;
+    document.getElementById('input_voice_type').value = '';
     alert('Score Added');
   },
   //SATB buttons (add_soprano, add_alto, add_tenor, add_bass, add_treble adds the voice type to the input_voice_type). It must be in order of SATB
@@ -700,7 +633,7 @@ Template.login.events({
           BlazeLayout.render('main', {content: 'reset'});
         } else {
           Meteor.callAsync('serverConsole', 'redirecting to dashboard');
-          BlazeLayout.render('main', {content: 'dashboard'});
+          BlazeLayout.render('main', {content: 'dashboard', scores: Scores.find({}).fetch()});
         }
         console.log("logged in");
       }
@@ -722,7 +655,7 @@ Template.login.events({
         BlazeLayout.render('main', {content: 'login'});
       } else {
         console.log("registered");
-        BlazeLayout.render('main', {content: 'dashboard'});
+        BlazeLayout.render('main', {content: 'dashboard', scores: Scores.find({}).fetch()});
       }
     });
   },
