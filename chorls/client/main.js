@@ -107,7 +107,7 @@ Template.main.events({
     scoreByTitle = Scores.find({title: {$regex: search, $options: 'i'}}).fetch();
     scoreByComposer = Scores.find({composer: {$regex: search, $options: 'i'}}).fetch();
     scoreByArranger = Scores.find({arranger: {$regex: search, $options: 'i'}}).fetch();
-    scoreByvoiceType = Scores.find({voiceType: {$regex: search, $options: 'i'}}).fetch();
+    scoreByvoiceType = Scores.find({voiceType: search}).fetch();
     scoreByNotes = Scores.find({notes: {$regex: search, $options: 'i'}}).fetch();
     scoreByTags = Scores.find({tags: {$regex: search, $options: 'i'}}).fetch();
     //combine all the search results in an object {title: title, field: field, _id: _id}
@@ -162,9 +162,11 @@ Template.main.events({
       console.log(id, JSON.stringify(score));
       BlazeLayout.render('main', {content: 'view_score', score: score});
       document.getElementById('search').value = '';
+      //simulates a click on the view_score button
+      document.getElementById('view_score').click();
     }
     
-  },  //viewScore
+  }, 
   'click #view_score': async function(event, instance) {
     event.preventDefault();
     //get the id from the link's data-id attribute

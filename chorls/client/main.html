@@ -95,6 +95,12 @@
                   <td>
                     {{this.composer}}
                   </td>
+                  <td>
+                    {{this.arranger}}
+                  </td>
+                  <td>
+                    {{this.voiceType}}
+                  </td>
                 </tr>
               {{/each}}
             {{else}}
@@ -199,7 +205,7 @@
             </a>
           <!-- search box -->
           <form class="w-100 me-3 mx-2" role="search">
-            <input type="search" class="form-control" placeholder="Search..." aria-label="Search" list="list-options" id="search">
+            <input type="search" class="form-control" aria-label="Search" list="list-options" id="search">
               <datalist id="list-options">
                 {{#if searchOptions}}
                   {{#each searchOptions}}
@@ -221,13 +227,7 @@
                 <option value="Add:{{search}}" id="add_score_option" data-id="{{search}}">
                   Add Score with Title: {{search}}
                 </option>
-                <option value="Show" id="show_all_option">
-                  Show: All Results for {{search}}
-                </option>
                 {{/if}}
-                <option value="ShowAll" id="show_all_option">
-                  Show: All Scores
-                </option>
               </datalist>
           </form>
           <!-- manual search button with arrow icon -->
