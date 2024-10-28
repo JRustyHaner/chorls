@@ -21,6 +21,13 @@ FlowRouter.route('/', {
     if (Roles.userIsInRole(Meteor.userId(), 'admin')) {
       Meteor.subscribe('allUsers');
     } 
+    //if flagged for reset, render the reset template
+    if(Meteor.user()){
+      if (Meteor.user().flag_for_reset) {
+        console.log("flagged for reset");
+        BlazeLayout.render('main', {content: 'reset'});
+      }
+    }
     Meteor.subscribe('scores');
     Meteor.callAsync('serverConsole','connected');
     //if logged in, render the main template with the content set to home
@@ -133,7 +140,6 @@ Template.searchbar.events({
     
     //get the id from the link's data-score attribute
     var id = $(event.currentTarget).attr('data-score');
-    alert(id);
     score = Scores.findOne({_id: id});
     console.log(id, score);
     //redirect to the view_score page with the search value
@@ -355,8 +361,8 @@ Template.userAdmin.helpers({
   users =  Meteor.users.find({}).fetch();
   //add roles to the users
   users = users.map(async function(user) {
-    user.roles = await Roles.getRolesForUserAsync(user._id);
-    return user;
+    //check if user is an admin
+    user.isAdmin = await Roles.userIsInRoleAsync(user._id, 'admin');
   });
   return users;
 },

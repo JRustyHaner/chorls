@@ -23,10 +23,18 @@ Meteor.startup(async function () {
   try{
     if (adminUsers.length == undefined || adminUsers.length == 0) {
       console.log("No admin users found, creating one");
-      let newuser = await Accounts.createUserAsync({
-        email: Meteor.settings.admin.email,
-        password: Meteor.settings.admin.password,
-      });
+      let newuser;
+      if (Meteor.settings.admin.username) {
+        newuser = await Accounts.createUserAsync({
+          email: Meteor.settings.admin.email,
+          password: Meteor.settings.admin.password,
+        });
+      } else {
+        newuser = await Accounts.createUserAsync({
+          email: "admin@admin.com",
+          password: "admin",
+        });
+      }
       //flag the user for a reset password
       await Meteor.users.updateAsync({_id: newuser}, {$set: {flag_for_reset: true}});
       console.log("New user: " + newuser);
@@ -41,8 +49,9 @@ Meteor.startup(async function () {
     //the user might exist but not have the admin role, so we need to add it
     console.log("Error creating admin user: " + error);
     console.log("Checking if user is an admin");
-    let user = Meteor.users.findOneAsync({email: Meteor.settings.admin.email});
-    console.log("User: " + user);
+    //we search for someone with emails[].address == Meteor.settings.admin.email
+    let user = await Meteor.users.findOneAsync({"emails.address": Meteor.settings.admin.email});
+    console.log("User: " + JSON.stringify(user));
     let roles = await Roles.getRolesForUserAsync(user._id);
     console.log("Roles: " + roles);
     if (roles.length == 0) {
@@ -50,6 +59,8 @@ Meteor.startup(async function () {
       await Roles.addUsersToRolesAsync(user, ["admin"]);
     }
   }
+  user = Meteor.users.findOneAsync({"emails.address": "admin@admin.com"});
+  await Roles.addUsersToRolesAsync([user._id], ["admin"]);
 });
 
 //scores are
@@ -139,11 +150,15 @@ Meteor.methods({
     return "User updated";
   },
   'promoteUser': function(userId) {
+    if(!userId)
+      return "No user id provided";
     console.log("Promoting user: " + userId);
     Roles.addUsersToRolesAsync(userId, "admin");
     return "User promoted";
   },
   'demoteUser': function(userId) {
+    if(!userId)
+      return "No user id provided";
     console.log("Demoting user: " + userId);
     Roles.removeUsersFromRolesAsync(userId, "admin");
     return "User demoted";

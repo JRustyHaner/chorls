@@ -173,7 +173,7 @@
           <thead>
             <tr>
               <th>Email</th>
-              <th>Role</th>
+              <th>Admin</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -182,7 +182,7 @@
               {{#each users}}
                 <tr>
                   <td>{{this.username}}</td>
-                  <td>{{this.role}}</td>
+                  <td>{{this.isAdmin}}</td>
                   <td>
                     <!-- delete_user, promote_user, demote_user -->
                     <button class="btn btn-danger" id="delete_user" data-score="{{this._id}}">Delete</button>
