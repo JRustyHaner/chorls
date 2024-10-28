@@ -31,16 +31,18 @@ FlowRouter.route('/', {
 
 
 //reactive var for the search bar
-Template.main.onCreated(function() {
+Template.searchbar.onCreated(function() {
   this.searchOptions = new ReactiveVar([]);
   this.search = new ReactiveVar('');
 });
 
 //general template helpers
-Template.main.helpers({
+Template.searchbar.helpers({
   //search options
   searchOptions() {
-    return Template.instance().searchOptions.get();
+    ret =  Template.instance().searchOptions.get();
+    console.log("searchOptions: " + JSON.stringify(ret));
+    return ret;
   },
   search() {
     return Template.instance().search.get();
@@ -61,17 +63,8 @@ Template.registerHelper('logo', function() {
   return document.location.origin + '/images/logo.jpeg';
 });
 
-
-//template helper for dashboard
-Template.dashboard.helpers({
-  //scores
-  scores() {
-    console.log(Scores.find({}).fetch());
-    return Scores.find({}).fetch();
-  }
-});
 //general events
-Template.main.events({
+Template.searchbar.events({
   'click #logout'(event, instance) {
     event.preventDefault();
     console.log("logging out");
@@ -107,39 +100,32 @@ Template.main.events({
     scoreByTitle = Scores.find({title: {$regex: search, $options: 'i'}}).fetch();
     scoreByComposer = Scores.find({composer: {$regex: search, $options: 'i'}}).fetch();
     scoreByArranger = Scores.find({arranger: {$regex: search, $options: 'i'}}).fetch();
-    scoreByvoiceType = Scores.find({voiceType: search}).fetch();
+    scoreByvoiceType = Scores.find({voiceType: {$regex: search, $options: 'i'}}).fetch();
     scoreByNotes = Scores.find({notes: {$regex: search, $options: 'i'}}).fetch();
     scoreByTags = Scores.find({tags: {$regex: search, $options: 'i'}}).fetch();
     //combine all the search results in an object {title: title, field: field, _id: _id}
     searchScores = [];
     searchScores = searchScores.concat(scoreByTitle.map(function(score) {
-      return {title: score.title, field: "title", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "title", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByComposer.map(function(score) {
-      return {title: score.title, field: "composer", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "composer", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByArranger.map(function(score) {
-      return {title: score.title, field: "arranger", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "arranger", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByvoiceType.map(function(score) {
-      return {title: score.title, field: "voiceType", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "voiceType", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByNotes.map(function(score) {
-      return {title: score.title, field: "notes", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "notes", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
     searchScores = searchScores.concat(scoreByTags.map(function(score) {
-      return {title: score.title, field: "tags", _id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
+      return {title: score.title, field: "tags", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
     }));
 
     console.log(searchScores);
-    //set the search options to the search results
-    if (searchScores) {
-      instance.searchOptions.set(searchScores);
-      console.log(searchScores);
-    } else {
-      instance.searchOptions.set(["No Results"]);
-      console.log("no results");
-    }
+    instance.searchOptions.set(searchScores);
   },
   //input property change
   'input #search': function(event, instance) {
@@ -167,11 +153,15 @@ Template.main.events({
     }
     
   }, 
-  'click #view_score': async function(event, instance) {
+  'click #view_score': function(event, instance) {
     event.preventDefault();
+    //clear searchoptions
+    instance.searchOptions.set([]);
+    //clear the search bar
+    document.getElementById('search').value = '';
     //get the id from the link's data-id attribute
     var id = event.target.getAttribute('data-id');
-    score = await Scores.findOneAsync({_id: id});
+    score = Scores.findOne({_id: id});
     console.log(id, score);
     //redirect to the view_score page with the search value
     BlazeLayout.render('main', {content: 'view_score', score: score});
@@ -180,40 +170,19 @@ Template.main.events({
   'click #home'(event, instance) {
     event.preventDefault();
     //redirect to the home page
-    BlazeLayout.render('main', {content: 'dashboard'});
+    BlazeLayout.render('main');
   }
 });
 //main subscription
-Template.main.onCreated(function() {
+Template.searchbar.onCreated(function() {
   //subscribe to the scores publication
   Meteor.subscribe('scores');
 });
 
-//view score onCreated
-Template.view_score.onCreated(function() {
-  //subscribe to the scores publication
-  Meteor.subscribe('scores');
-  //reactive var for the selected score
-  this.selectedScore = new ReactiveVar({});
-});
 
-//view score onRendered
-Template.view_score.onRendered(function() {
-  //get the search value from the flow router params
-  var score = Blaze.getData();
-  
-  console.log("score: " + score);
-  this.selectedScore.set(score);
-  this.edit = new ReactiveVar(false);
-});
 
 //view score helpers
 Template.view_score.helpers({
-  //selected score
-  selectedScore() {
-    return Template.instance().selectedScore.get();
-  },
-  //edit
   edit() {
     return Template.instance().edit.get();
   }
