@@ -21,6 +21,7 @@ FlowRouter.route('/', {
     if (Roles.userIsInRole(Meteor.userId(), 'admin')) {
       Meteor.subscribe('allUsers');
     } 
+    Meteor.subscribe('scores');
     Meteor.callAsync('serverConsole','connected');
     //if logged in, render the main template with the content set to home
     //if not logged in, render the main template with the content set to login
@@ -95,76 +96,51 @@ Template.searchbar.events({
     //set the search reactive var
     instance.search.set(search);
     console.log(search);
-    //search any score that has the search value in any of the fields
-    //we want to return the title and the field that the search value was found in
-    scoreByTitle = Scores.find({title: {$regex: search, $options: 'i'}}).fetch();
-    scoreByComposer = Scores.find({composer: {$regex: search, $options: 'i'}}).fetch();
-    scoreByArranger = Scores.find({arranger: {$regex: search, $options: 'i'}}).fetch();
-    scoreByvoiceType = Scores.find({voiceType: {$regex: search, $options: 'i'}}).fetch();
-    scoreByNotes = Scores.find({notes: {$regex: search, $options: 'i'}}).fetch();
-    scoreByTags = Scores.find({tags: {$regex: search, $options: 'i'}}).fetch();
-    //combine all the search results in an object {title: title, field: field, _id: _id}
-    searchScores = [];
-    searchScores = searchScores.concat(scoreByTitle.map(function(score) {
-      return {title: score.title, field: "title", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
-    searchScores = searchScores.concat(scoreByComposer.map(function(score) {
-      return {title: score.title, field: "composer", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
-    searchScores = searchScores.concat(scoreByArranger.map(function(score) {
-      return {title: score.title, field: "arranger", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
-    searchScores = searchScores.concat(scoreByvoiceType.map(function(score) {
-      return {title: score.title, field: "voiceType", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
-    searchScores = searchScores.concat(scoreByNotes.map(function(score) {
-      return {title: score.title, field: "notes", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
-    searchScores = searchScores.concat(scoreByTags.map(function(score) {
-      return {title: score.title, field: "tags", id: score._id, composer: score.composer, arranger: score.arranger, voiceType: score.voiceType, notes: score.notes, tags: score.tags};
-    }));
+    //search any score that has the search value in any of the fields and report on which fields the search value was found. If multiple fields have the search value, the score is returned once, listing all the fields that have the search value
+    //search is case insensitive
+    //search is a substring search
+    //get all the scores
+    var scores = Scores.find({}).fetch();
+    //search the scores for the search value
+    var searchScores = [];
+    for (var i = 0; i < scores.length; i++) {
+      //get the score
+      var score = scores[i];
+      //get the score fields
+      var fields = Object.keys(score);
+      //search the fields for the search value
+      for (var j = 0; j < fields.length; j++) {
+        //get the field
+        var field = fields[j];
+        //get the value of the field
+        var value = score[field];
+        //if the value is a string and the search value is a substring of the value
+        if (typeof value === 'string' && value.toLowerCase().includes(search.toLowerCase())) {
+          //add the score to the searchScores array with the field that has the search value
+          score.field = field;
+          score.id = score._id;
+          searchScores.push(score);
+          break;
+        }
+      }
+    }
 
     console.log(searchScores);
     instance.searchOptions.set(searchScores);
   },
-  //input property change
-  'input #search': function(event, instance) {
-    //we are checking if the value starts with Add:, if it is, we want to redirect to the add_score page and send the search value
-    //empty the search bar
-    console.log(document.getElementById('search').value);
-
-    if (document.getElementById('search').value.startsWith('Add:')) {
-      //remove the Add: from the search value
-      
-      instance.search.set(document.getElementById('search').value.substring(4));
-      document.getElementById('search').value = '';
-      BlazeLayout.render('main', {content: 'add_score', search: instance.search.get()});
-    }
-    //if the value starts with View:, we want to redirect to the view_score page and send the search value
-    if (document.getElementById('search').value.startsWith('View:')) {
-      //remove the View: from the search value
-      id = document.getElementById('search').value.substring(5);
-      score = Scores.findOne({_id: id});
-      console.log(id, JSON.stringify(score));
-      BlazeLayout.render('main', {content: 'view_score', score: score});
-      document.getElementById('search').value = '';
-      //simulates a click on the view_score button
-      document.getElementById('view_score').click();
-    }
-    
-  }, 
   'click #view_score': function(event, instance) {
     event.preventDefault();
-    //clear searchoptions
-    instance.searchOptions.set([]);
-    //clear the search bar
-    document.getElementById('search').value = '';
-    //get the id from the link's data-id attribute
-    var id = $(event.target).attr('data-id');
+    
+    //get the id from the link's data-score attribute
+    var id = $(event.currentTarget).attr('data-score');
+    alert(id);
     score = Scores.findOne({_id: id});
     console.log(id, score);
     //redirect to the view_score page with the search value
     BlazeLayout.render('main', {content: 'view_score', score: score});
+    //clear the search bar
+    instance.search.set('');
+    document.getElementById('search').value = '';
   },
   //home button click
   'click #home'(event, instance) {
@@ -408,8 +384,8 @@ Template.userAdmin.events({
   //delete_user button click
   'click #delete_user'(event, instance) {
     event.preventDefault();
-    //get the email from the data-id attribute of the button
-    var email = $(event.target).attr('data-id');
+    //get the email from the data-score attribute of the button
+    var email = $(event.target).attr('data-score');
     //make a meteor async call to delete a user
     Meteor.call('deleteUser', email, function(error, result) {
       if (error) {
@@ -423,8 +399,8 @@ Template.userAdmin.events({
   //promote_user button click
   'click #promote_user'(event, instance) {
     event.preventDefault();
-    //get the email from the data-id attribute of the button
-    var email = $(event.target).attr('data-id');
+    //get the email from the data-score attribute of the button
+    var email = $(event.target).attr('data-score');
     
     //make a meteor async call to promote a user
     Meteor.call('promoteUser', email, function(error, result) {
@@ -440,8 +416,8 @@ Template.userAdmin.events({
   //demote_user button click
   'click #demote_user'(event, instance) {
     event.preventDefault();
-    //get the email from the data-id attribute of the button
-    var email = $(event.target).attr('data-id');
+    //get the email from the data-score attribute of the button
+    var email = $(event.target).attr('data-score');
     //make a meteor async call to demote a user
     Meteor.call('demoteUser', email, function(error, result) {
       if (error) {

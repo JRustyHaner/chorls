@@ -107,13 +107,18 @@
           {{#if searchOptions}}
           <div class="list-group w-100" id="list-options">
               {{#each searchOptions}}
-                <a href="#" class="list-group-item list-group-item-action" id="view_score" data-id="{{this.id}}">
+                <a href="#" class="list-group-item list-group-item-action" id="view_score" data-score="{{this.id}}">
                   <!-- title should be the matching field and the title of the score -->
                   <h5 class="list-group-item-heading">{{this.field}}: {{this.title}}</h5>
                   <!-- subtitle should be the composer and arranger in grey -->
                   <p class="list-group
                   -item-text text-muted">{{this.composer}} {{#if this.arranger}} arr {{this.arranger}} {{/if}}</p>
+                               <!-- small faded text with the id of the score -->
+                <small class="text-muted
+                ">ID: {{this.id}}</small>
                 </a>
+   
+
               {{/each}}
           </div>
           {{/if}}
@@ -180,9 +185,9 @@
                   <td>{{this.role}}</td>
                   <td>
                     <!-- delete_user, promote_user, demote_user -->
-                    <button class="btn btn-danger" id="delete_user" data-id="{{this._id}}">Delete</button>
-                    <button class="btn btn-primary" id="promote_user" data-id="{{this._id}}">Promote</button>
-                    <button class="btn btn-primary" id="demote_user" data-id="{{this._id}}">Demote</button>
+                    <button class="btn btn-danger" id="delete_user" data-score="{{this._id}}">Delete</button>
+                    <button class="btn btn-primary" id="promote_user" data-score="{{this._id}}">Promote</button>
+                    <button class="btn btn-primary" id="demote_user" data-score="{{this._id}}">Demote</button>
                   </td>
                 </tr>
               {{/each}}
@@ -330,7 +335,7 @@
         <div class="list-group">
           {{#if searchResults}}
             {{#each searchResults}}
-              <a href="#" class="list-group" id="view_score" data-id="{{this._id}}">
+              <a href="#" class="list-group" id="view_score" data-score="{{this._id}}">
                 <div class="list-group">
                   <h5 class="list-group">{{this.title}}</h5>
                   <p class="list-group">{{this.composer}} {{#if this.arranger}} arr {{this.arranger}} {{/if}}</p>
