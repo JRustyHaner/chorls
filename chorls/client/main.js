@@ -145,7 +145,7 @@ Template.searchbar.events({
     //redirect to the view_score page with the search value
     BlazeLayout.render('main', {content: 'view_score', score: score});
     //clear the search bar
-    instance.search.set('');
+    instance.searchOptions.set('');
     document.getElementById('search').value = '';
   },
   //home button click
