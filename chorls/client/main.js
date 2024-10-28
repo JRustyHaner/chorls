@@ -60,7 +60,7 @@ Template.registerHelper('isUserLoggedIn', function() {
 //logo image
 Template.registerHelper('logo', function() {
   //return full url to /images/logo.png
-  return document.location.origin + '/images/logo.jpeg';
+  return document.location.origin + '/images/logo.png';
 });
 
 //general events
@@ -160,7 +160,7 @@ Template.searchbar.events({
     //clear the search bar
     document.getElementById('search').value = '';
     //get the id from the link's data-id attribute
-    var id = event.target.getAttribute('data-id');
+    var id = $(event.target).attr('data-id');
     score = Scores.findOne({_id: id});
     console.log(id, score);
     //redirect to the view_score page with the search value
@@ -409,7 +409,7 @@ Template.userAdmin.events({
   'click #delete_user'(event, instance) {
     event.preventDefault();
     //get the email from the data-id attribute of the button
-    var email = event.target.getAttribute('data-id');
+    var email = $(event.target).attr('data-id');
     //make a meteor async call to delete a user
     Meteor.call('deleteUser', email, function(error, result) {
       if (error) {
@@ -424,7 +424,7 @@ Template.userAdmin.events({
   'click #promote_user'(event, instance) {
     event.preventDefault();
     //get the email from the data-id attribute of the button
-    var email = event.target.getAttribute('data-id');
+    var email = $(event.target).attr('data-id');
     
     //make a meteor async call to promote a user
     Meteor.call('promoteUser', email, function(error, result) {
@@ -441,7 +441,7 @@ Template.userAdmin.events({
   'click #demote_user'(event, instance) {
     event.preventDefault();
     //get the email from the data-id attribute of the button
-    var email = event.target.getAttribute('data-id');
+    var email = $(event.target).attr('data-id');
     //make a meteor async call to demote a user
     Meteor.call('demoteUser', email, function(error, result) {
       if (error) {
