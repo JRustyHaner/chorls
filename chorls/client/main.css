@@ -1,8 +1,8 @@
 body {
     background-image: url('images/bg.jpg');
     /* background should be at 30% opacity */
-    background-color: rgba(0, 0, 0, 0.3);
-    background-repeat: no-repeat;
+    background-color: rgba(0, 0, 0, 0.1);
+    background-repeat:repeat;
     background-size:auto;
     background-position: center;
     margin: 0;
