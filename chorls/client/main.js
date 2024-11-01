@@ -703,15 +703,19 @@ Template.listAll.helpers({
       //the output is an array of objects with the fields key and value
       //get this score's tag, section, and voiceType fields
       var tag = score.tags;
+      //split the tags into an array. They are space separated.
+      tag = tag.split(' ');
       var section = score.section;
       var voiceType = score.voiceType;
       //if the tag is not in the filters, add it
-      if (!filters.includes({ field: 'tags', value: tag })) {
-        //make sure the tag is not empty
-        if (tag != '') {
-          filters.push({ field: 'tags', value: tag });
+      tag.forEach(function(tag) {
+        if (!filters.includes({ field: 'tags', value: tag })) {
+          //make sure the tag is not empty
+          if (tag != '') {
+            filters.push({ field: 'tags', value: tag });
+          }
         }
-      }
+      });
       //if the section is not in the filters, add it
       if (!filters.includes({ field: 'section', value: section })) {
         //make sure the section is not empty

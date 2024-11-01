@@ -38,6 +38,8 @@
        
       </div>
     </div>
+            {{> footer}}
+      
       
 </template>
 
@@ -59,6 +61,9 @@
         
 
   </template>
+
+
+
 
 <template name="searchbar">
   {{#if currentUser}}
@@ -140,7 +145,7 @@
   <div class="container">
     <!-- filters for voice type, tags, and section. These are in a blaze helper called allFields witch is a object with three keys, voiceType, tags, and section. Each key has an array of unique values for that field. -->
     <div class="row justify-content-center">
-      <div class="col-md-10 col-sm-12">
+      <div class="col-md-12 col-sm-12">
       <div class="form-row">
       <div class="form-group mx-auto">
         {{#if allFields}}
@@ -149,13 +154,14 @@
         <button type="button" id="filter" data-field="{{this.field}}" data-value="{{this.value}}" class="badge badge-primary m-1">{{this.value}}</button>
           {{/each}}
 
+        
+        </div>
         {{#if activeFilter}}
           {{#each activeFilter}}
             <span id="remove_filter" class="badge badge-light m-1" data-field="{{this.field}}" data-value="{{this.value}}">{{this.value}} <span aria-hidden="true">&times;</span></span>
           {{/each}}
           <button type="button" id="clear" class="badge badge-light m-1">Clear Filters</button>
         {{/if}}
-        </div>
         {{else}}
         <small>No filters available</small>
         {{/if}}
@@ -284,8 +290,8 @@
       <!-- yeild to the template that is selected with the variable content. If content is not set, it will default to the searchpage -->
         {{> searchbar}}
         {{> Template.dynamic template=content}}
-        {{> footer}}
-      
+        <div class="vh-10"></div>
+
       
       
 
