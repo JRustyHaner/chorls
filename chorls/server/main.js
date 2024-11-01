@@ -8,58 +8,6 @@ Meteor.startup(async function () {
   // code to run on server at startup
   //define roles
   console.log("Starting up");
-  await Roles.createRoleAsync("admin", {unlessExists: true});
-  await Roles.createRoleAsync("user", {unlessExists: true});
-  //print out the settings
-  console.log("Settings: ");
-  console.log(Meteor.settings);
-  //add the admin user from settings.json, we are using Meteor 3, so we need to use async functions
-  //we need to check if an admin user already exists, if not, create one based on the settings.json file
-  let adminUsers = await Roles.getUsersInRoleAsync("admin");
-  console.log("Admin users: " + adminUsers.length);
-  try{
-    if (adminUsers.length == undefined || adminUsers.length == 0) {
-      console.log("No admin users found, creating one");
-      let newuser;
-      if (Meteor.settings.admin.username) {
-        newuser = await Accounts.createUserAsync({
-          email: Meteor.settings.admin.email,
-          password: Meteor.settings.admin.password,
-        });
-      } else {
-        newuser = await Accounts.createUserAsync({
-          email: "admin@admin.com",
-          password: "admin",
-        });
-      }
-      //flag the user for a reset password
-      await Meteor.users.updateAsync({_id: newuser}, {$set: {flag_for_reset: true}});
-      console.log("New user: " + newuser);
-      await Roles.addUsersToRolesAsync(newuser, ["admin"]);
-      //print out new user's roles
-      console.log("New user roles: ");
-      console.log(await Roles.getRolesForUserAsync(newuser));
-    } else {
-      console.log("Admin user already exists");
-    }
-  } catch (error) {
-    //the user might exist but not have the admin role, so we need to add it
-    console.log("Error creating admin user: " + error);
-    console.log("Checking if user is an admin");
-    //we search for someone with emails[].address == Meteor.settings.admin.email
-    if (Meteor.settings?.admin?.username) {
-      user = await Meteor.users.findOneAsync({email: Meteor.settings.admin.email});
-      console.log("User: " + JSON.stringify(user));
-      let roles = await Roles.getRolesForUserAsync(user._id);
-      console.log("Roles: " + roles);
-      if (roles.length == 0) {
-        console.log("User is not an admin, adding admin role");
-        await Roles.addUsersToRolesAsync(user, ["admin"]);
-      }
-    }
-  }
-  user = Meteor.users.findOneAsync({"emails.address": "admin@admin.com"});
-  await Roles.addUsersToRolesAsync([user._id], ["admin"]);
 });
 
 //scores are
