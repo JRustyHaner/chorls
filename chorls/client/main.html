@@ -44,12 +44,12 @@
 <template name="footer">
    <!-- footer at bottom of page with GitHub for JRustyHaner-->
    <br>
-        <div class="justify-content-center align-items-center vh-10 mx-auto">
+        <div class="justify-content-center align-items-center vh-10 fixed-bottom bg-light">
           <div class="col-md-8 col-md-offset-2 col-sm-12 text-center mx-auto">
             <p class="text-muted small
             ">CHoRLS is a project for the <a href="https://www.churchoftheriver.org" target="_blank">First Unitarian Church of Memphis</a>
             and is maintained by <a href="
-            https://github.com/JRustyHaner" target="_blank">JRustyHaner</a>
+            https://github.com/JRustyHaner" target="_blank">JRustyHaner</a> and choir volunteers.
             Some content is generative AI. Please contact us if you have any questions or concerns.</p>
             <!-- copyright -->
             <p class="text-muted small
@@ -91,21 +91,21 @@
               {{#if isInRole 'admin'}}
               <a class="dropdown-item" href="#" id="admin">Admin</a>
               {{/if}}
+              <a class="dropdown-item" href="#" id="listAll">List All</a>
               <a class="dropdown-item" href="#" id="logout">Log Out</a>
             </div>
             </div>
         </div>
         </div>
-        <div class="row text-center align-items-center">
+        <div class="row text-center align-items-center" id="outside">
           
           <!-- search box -->
           <form class="w-100 me-3" role="search">
             <input type="search" class="form-control" aria-label="Search" list="list-options" id="search" autocomplete="off">
-    
           </form>
           <!-- full screen suggestions box, starting just below the search bar. It's not a datalist but a div -->
           {{#if searchOptions}}
-          <div class="list-group w-100" id="list-options">
+          <div class="list-group w-50 mx-auto" id="list-options">
               {{#each searchOptions}}
                 <a href="#" class="list-group-item list-group-item-action" id="view_score" data-score="{{this.id}}">
                   <!-- title should be the matching field and the title of the score -->
@@ -114,8 +114,7 @@
                   <p class="list-group
                   -item-text text-muted">{{this.composer}} {{#if this.arranger}} arr {{this.arranger}} {{/if}}</p>
                                <!-- small faded text with the id of the score -->
-                <small class="text-muted
-                ">ID: {{this.id}}</small>
+
                 </a>
    
 
@@ -131,8 +130,75 @@
         </div>
       </div>
     </header>
+
     {{/if}}
+
 </template>
+
+<!-- list all scores, filterable by voice type, composer, arranger, and tags -->
+<template name="listAll">
+  <div class="container">
+    <!-- filters for voice type, tags, and section. These are in a blaze helper called allFields witch is a object with three keys, voiceType, tags, and section. Each key has an array of unique values for that field. -->
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+      <div class="form-row">
+      <div class="form-group mx-auto">
+        {{#if allFields}}
+        <div class="d-flex flex-row flex-nowrap overflow-auto">
+          {{#each allFields}}
+        <button type="button" id="filter" data-field="{{this.field}}" data-value="{{this.value}}" class="badge badge-primary m-1">{{this.value}}</button>
+          {{/each}}
+
+        {{#if activeFilter}}
+          {{#each activeFilter}}
+            <span id="remove_filter" class="badge badge-light m-1" data-field="{{this.field}}" data-value="{{this.value}}">{{this.value}} <span aria-hidden="true">&times;</span></span>
+          {{/each}}
+          <button type="button" id="clear" class="badge badge-light m-1">Clear Filters</button>
+        {{/if}}
+        </div>
+        {{else}}
+        <small>No filters available</small>
+        {{/if}}
+      </div>
+      </div>
+      </div>
+    </div>
+    <!-- list of scores, each with a title and composer. Clicking on a score will take you to the view_score template. -->
+
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+      <div class="list-group">
+        {{#if allScores}}
+        <div class="row">
+          {{#each allScores}}
+            
+            <div class="col-6 col-sm-6 text-center my-2">
+              <a id="view_score" data-score="{{this._id}}" href="#">
+              <h5> {{this.title}}</h5>
+                </a>
+                <small class="list-group">
+                {{#if this.library_number}} Library No. {{this.library_number}} {{else}} No Library Number {{/if}}<br>
+                {{#if this.composer}}
+                  {{this.composer}}
+                {{else}}
+                  Unknown
+                {{/if}}
+                {{#if this.arranger}}
+                  arr {{this.arranger}}
+                {{else}}
+                  arr Unknown
+                {{/if}}
+                </small>
+            </div>
+          {{/each}}
+        </div>
+        {{/if}}
+      </div>
+      </div>
+    </div>
+  </div>
+</template>
+                
 
 <!-- email and password change template for first login -->
 <template name="reset">
@@ -342,17 +408,6 @@
                 </div>
               </a>
             {{/each}}
-  
-          {{else}}
-                      <!-- add a score option -->
-            <a href="#" class="list-group" id="add_score">
-              <div class="list-group">
-                <h5 class="list-group
-                ">Add New Score</h5>
-                <p class="list-group
-                ">Click here to add a new score to the database.</p>
-              </div>
-            </a>
           {{/if}}
         </div>
       </div>
@@ -364,9 +419,10 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-8">
+        <h1>{{score.title}}</h1>
         <label for="view_title"><strong>Title:</strong></label>
         <h2><input type="text" class="form-control" id="view_title" value="{{score.title}}" readonly></h2>
-        <p>The score's database ID is: <span id="view_id">{{score._id}}</span></p>
+       <span id="view_id" class="d-none">{{score._id}}</span>
         <div class="form-group">
           <label for="view_composer"><strong>Composer:</strong></label>
           <input type="text" class="form-control" id="view_composer" value="{{score.composer}}" readonly>

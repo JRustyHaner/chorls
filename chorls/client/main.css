@@ -1,11 +1,36 @@
 body {
     background-image: url('images/bg.jpg');
-    /* background should be at 30% opacity */
-    background-color: rgba(0, 0, 0, 0.1);
+    /* background image should be at 30% opacity */
+    background-color: #000;
+    background-attachment: fixed;
     background-repeat:repeat;
     background-size:auto;
     background-position: center;
     margin: 0;
     font-family: Arial, sans-serif;
+    height: calc(100vh - 100px);
 
 }
+
+/* text input boxes should be rounded and have a border */
+input[type=text], input[type=password] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* the searchbar should be more rounded */
+input[type=search] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+

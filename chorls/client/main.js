@@ -73,6 +73,11 @@ Template.registerHelper('logo', function() {
 
 //general events
 Template.searchbar.events({
+  'click #listAll'(event, instance) {
+    event.preventDefault();
+    //redirect to the listAll page
+    BlazeLayout.render('main', {content: 'listAll'});
+  },
   'click #logout'(event, instance) {
     event.preventDefault();
     console.log("logging out");
@@ -100,7 +105,11 @@ Template.searchbar.events({
   'keyup #search'(event, instance) {
     //get the search bar value
     var search = document.getElementById('search').value;
-    //set the search reactive var
+    //if the search bar value is empty, clear the search options
+    if (search == '') {
+      instance.searchOptions.set([]);
+      return;
+    }
     instance.search.set(search);
     console.log(search);
     //search any score that has the search value in any of the fields and report on which fields the search value was found. If multiple fields have the search value, the score is returned once, listing all the fields that have the search value
@@ -115,6 +124,10 @@ Template.searchbar.events({
       var score = scores[i];
       //get the score fields
       var fields = Object.keys(score);
+      //remove the _id field, number_of_copies, and number_of_originals
+      fields.splice(fields.indexOf('_id'), 1);
+      fields.splice(fields.indexOf('number_of_copies'), 1);
+      fields.splice(fields.indexOf('number_of_originals'), 1);
       //search the fields for the search value
       for (var j = 0; j < fields.length; j++) {
         //get the field
@@ -131,10 +144,19 @@ Template.searchbar.events({
         }
       }
     }
+    
 
     console.log(searchScores);
     instance.searchOptions.set(searchScores);
   },
+  //if the mouse leaves or is clicked outside of the search bar, clear the search options
+  'click #outside'(event, instance) {
+    instance.searchOptions.set([]);
+    //set the search bar value to empty
+    document.getElementById('search').value = '';
+  },
+    
+  
   'click #view_score': function(event, instance) {
     event.preventDefault();
     
@@ -199,6 +221,7 @@ Template.view_score.events({
     var title = document.getElementById('view_title').value;
     var composer = document.getElementById('view_composer').value;
     var arranger = document.getElementById('view_arranger').value;
+    var accompaniment = document.getElementById('view_accompaniment').value;
     var voiceType = document.getElementById('view_voice_type').value;
     var number_of_copies = document.getElementById('view_number_of_copies').value;
     var number_of_originals = document.getElementById('view_number_of_originals').value;
@@ -213,6 +236,7 @@ Template.view_score.events({
       title: title,
       composer: composer,
       arranger: arranger,
+      accompaniment: accompaniment,
       voiceType: voiceType,
       number_of_copies: number_of_copies,
       number_of_originals: number_of_originals,
@@ -226,6 +250,7 @@ Template.view_score.events({
       title: title,
       composer: composer,
       arranger: arranger,
+      accompaniment: accompaniment,
       voiceType: voiceType,
       number_of_copies: number_of_copies,
       number_of_originals: number_of_originals,
@@ -472,6 +497,7 @@ Template.add_score.events({
       title: document.getElementById('input_title').value,
       composer: document.getElementById('input_composer').value,
       arranger: document.getElementById('input_arranger').value,
+      accompaniment: document.getElementById('input_accompaniment').value,
       voiceType: document.getElementById('input_voice_type').value,
       number_of_copies: document.getElementById('input_number_of_copies').value,
       number_of_originals: document.getElementById('input_number_of_originals').value,
@@ -487,7 +513,10 @@ Template.add_score.events({
       }
     });
     document.getElementById('input_title').value = '';
+    document.getElementById('input_composer').value = '';
     document.getElementById('input_arranger').value='';
+    document.getElementById('input_composer').value='';
+    document.getElementById('input_number_of_originals').value='';
     document.getElementById('input_number_of_copies').value='';
     document.getElementById('library_number').value='';
     document.getElementById('section').value='';
@@ -575,7 +604,7 @@ Template.login.events({
     //make a meteor async call to login
     Meteor.loginWithPassword(username, password, async function(error) {
       if (error) {
-        console.log(error);
+        Meteor.callAsync('serverConsole', 'error logging in: ' + error + ' ' + username);
         alert('Invalid Username or Password, please try again');
       } else {
         //if profile.flagged_for_reset is true, redirect to the reset page if the user is an admin, otherwise redirect to the home page
@@ -613,3 +642,163 @@ Template.login.events({
     });
   },
 });
+
+//listAll template. Needs ro have a allScores helper and a allFields helper that contains all unique field values for the tag, section, and voiceType fields
+//listAll template also needs a reactive var for the filters, it should be an array of objects with the fields tag, section, and voiceType
+Template.listAll.onCreated(function() {
+  //subscribe to the scores publication
+  Meteor.subscribe('scores');
+  //reactive var for the filters
+  this.filters = new ReactiveVar([]);
+  //active var for active filter
+  this.activeFilter = new ReactiveVar([]);
+});
+//allScores is an array of objects that contain all the scores, allFields is an object that contains arrays of unique values for the tag, section, and voiceType fields
+Template.listAll.helpers({
+  //all scores
+  allScores: function() {
+    filters = Template.instance().activeFilter.get();
+    console.log("filters: " + JSON.stringify(filters));
+    //if there are no filters, return all the scores
+    if (filters.length == 0) {
+      //order the scores by title
+      return Scores.find({}, { sort: { title: 1 } }).fetch();
+    }
+    //get all the scores
+    scores = Scores.find({}).fetch();
+    //filter the scores by the filters
+    filters.forEach(function(filter) {
+      console.log("filter: " + JSON.stringify(filter));
+      //make sure the value is not empty
+      if (filter.value != '') {
+        scores = scores.filter(function(score) {
+          //if the filter field is tags, check if the score has the tag
+          if (filter.field == 'tags') {
+            return score.tags == filter.value;
+          }
+          //if the filter field is section, check if the score has the section
+          if (filter.field == 'section') {
+            return score.section == filter.value;
+          }
+          //if the filter field is voiceType, check if the score has the voiceType
+          if (filter.field == 'voiceType') {
+            return score.voiceType == filter.value;
+          }
+        });
+      }
+    });
+    console.log("filtered scores: " + JSON.stringify(scores));
+    //order the scores by title
+    return scores;
+  },
+  //all fields is an array of objects that contain an array of unique values for the tag, section, and voiceType fields
+  allFields: function() {
+    //get all unique values for the tag, section, and voiceType fields
+    var filters = Template.instance().filters.get();
+    //filters are an array of objects with the fields key and value
+    //get all the scores
+    scores = Scores.find({}).fetch();
+    //for each score, get the tag, section, and voiceType fields
+    scores.forEach(function(score) {
+      //the output is an array of objects with the fields key and value
+      //get this score's tag, section, and voiceType fields
+      var tag = score.tags;
+      var section = score.section;
+      var voiceType = score.voiceType;
+      //if the tag is not in the filters, add it
+      if (!filters.includes({ field: 'tags', value: tag })) {
+        //make sure the tag is not empty
+        if (tag != '') {
+          filters.push({ field: 'tags', value: tag });
+        }
+      }
+      //if the section is not in the filters, add it
+      if (!filters.includes({ field: 'section', value: section })) {
+        //make sure the section is not empty
+        if (section != '') {
+          filters.push({ field: 'section', value: section });
+        }
+      }
+      //if the voiceType is not in the filters, add it
+      if (!filters.includes({ field: 'voiceType', value: voiceType })) {
+        //make sure the voiceType is not empty
+        if (voiceType != '') {
+          filters.push({ field: 'voiceType', value: voiceType });
+        } 
+      }
+      //check for duplicates
+      filters = filters.filter((filter, index, self) =>
+        index === self.findIndex((t) => (
+          t.field === filter.field && t.value === filter.value
+        ))
+      );
+    });
+    console.log("available filters: " + JSON.stringify(filters));
+    return filters;
+  },
+  //filter list helper
+  filters: function() {
+   //remove active filters
+   allFilters = Template.instance().filters.get();
+   activeFilters = Template.instance().activeFilter.get();
+    //remove the active filters from the allFilters
+    allFilters.each(function(filter) {
+      if (filter.value == activeFilters.value) {
+        allFilters.splice(allFilters.indexOf(filter), 1);
+      }
+    });
+    return allFilters;
+  },
+  //active filter helper
+  activeFilter: function() {
+    return Template.instance().activeFilter.get();
+  }
+});
+//listAll events for selecting a filter or clearing all filters
+Template.listAll.events({
+  //tag click
+  'click #filter'(event, instance) {
+    //get the tag value
+    var field = $(event.target).attr('data-field');
+    var value = $(event.target).attr('data-value');
+    //get the filters
+    var filters = instance.activeFilter.get();
+    //if the tag is already in the filters, remove it, otherwise add it
+    if (filters.includes({ field: field, value: value })) {
+      filters.splice(filters.indexOf({ field: field, value: value }), 1);
+    } else {
+      filters.push({ field: field, value: value });
+    }
+    //set the filters1
+    instance.activeFilter.set(filters);
+
+  },
+  //remove filter click
+  'click #remove_filter'(event, instance) {
+    //get the tag value
+    var field = $(event.target).attr('data-field');
+    var value = $(event.target).attr('data-value');
+    //get the filters
+    var filters = instance.activeFilter.get();
+    //remove the filter
+    filters.splice(filters.indexOf({ field: field, value: value }), 1);
+    //set the filters
+    instance.activeFilter.set(filters);
+  },
+  //clear button click
+  'click #clear'(event, instance) {
+    //clear the filters
+    instance.activeFilter.set([]);
+  },
+  //view score button click
+  'click #view_score': function(event, instance) {
+    event.preventDefault();
+    //get the id from the link's data-score attribute
+    var id = $(event.currentTarget).attr('data-score');
+    score = Scores.findOne({_id: id});
+    console.log(id, score);
+    //redirect to the view_score page with the search value
+    BlazeLayout.render('main', {content: 'view_score', score: score});
+  }
+});
+
