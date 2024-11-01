@@ -149,7 +149,7 @@
       <div class="form-row">
       <div class="form-group mx-auto">
         {{#if allFields}}
-        <div class="d-flex flex-row flex-nowrap overflow-auto">
+        <div class="d-flex flex-row flex-nowrap overflow-scroll mh-10 vw-100">
           {{#each allFields}}
         <button type="button" id="filter" data-field="{{this.field}}" data-value="{{this.value}}" class="badge badge-primary m-1">{{this.value}}</button>
           {{/each}}
