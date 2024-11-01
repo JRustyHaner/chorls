@@ -13,9 +13,6 @@ Meteor.startup(async function () {
   //print out the settings
   console.log("Settings: ");
   console.log(Meteor.settings);
-  console.log("Admin email: " + Meteor.settings.admin.email);
-  console.log("Admin username: " + Meteor.settings.admin.username);
-  console.log("Admin password: " + Meteor.settings.admin.password);
   //add the admin user from settings.json, we are using Meteor 3, so we need to use async functions
   //we need to check if an admin user already exists, if not, create one based on the settings.json file
   let adminUsers = await Roles.getUsersInRoleAsync("admin");
@@ -50,13 +47,15 @@ Meteor.startup(async function () {
     console.log("Error creating admin user: " + error);
     console.log("Checking if user is an admin");
     //we search for someone with emails[].address == Meteor.settings.admin.email
-    let user = await Meteor.users.findOneAsync({"emails.address": Meteor.settings.admin.email});
-    console.log("User: " + JSON.stringify(user));
-    let roles = await Roles.getRolesForUserAsync(user._id);
-    console.log("Roles: " + roles);
-    if (roles.length == 0) {
-      console.log("User is not an admin, adding admin role");
-      await Roles.addUsersToRolesAsync(user, ["admin"]);
+    if (Meteor.settings?.admin?.username) {
+      user = await Meteor.users.findOneAsync({email: Meteor.settings.admin.email});
+      console.log("User: " + JSON.stringify(user));
+      let roles = await Roles.getRolesForUserAsync(user._id);
+      console.log("Roles: " + roles);
+      if (roles.length == 0) {
+        console.log("User is not an admin, adding admin role");
+        await Roles.addUsersToRolesAsync(user, ["admin"]);
+      }
     }
   }
   user = Meteor.users.findOneAsync({"emails.address": "admin@admin.com"});
