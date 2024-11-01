@@ -10,7 +10,7 @@ Meteor.startup(async function () {
   console.log("Starting up");
 });
 
-//scores are
+//scores arel
   //_id: score._id,
     //  title: title,
       //composer: composer,
