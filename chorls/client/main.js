@@ -11,6 +11,8 @@ import { Roles } from 'meteor/alanning:roles';
 
 import './main.html';
 
+//organizations have name, custom url, and a list of user ids, and an invite key
+Organizations = new Mongo.Collection('organizations');
 Scores = new Mongo.Collection('scores');
 
 //routing using flow-router
@@ -119,31 +121,40 @@ Template.searchbar.events({
     var scores = Scores.find({}).fetch();
     //search the scores for the search value
     var searchScores = [];
-    for (var i = 0; i < scores.length; i++) {
-      //get the score
-      var score = scores[i];
-      //get the score fields
-      var fields = Object.keys(score);
-      //remove the _id field, number_of_copies, and number_of_originals
-      fields.splice(fields.indexOf('_id'), 1);
-      fields.splice(fields.indexOf('number_of_copies'), 1);
-      fields.splice(fields.indexOf('number_of_originals'), 1);
-      //search the fields for the search value
-      for (var j = 0; j < fields.length; j++) {
-        //get the field
-        var field = fields[j];
-        //get the value of the field
-        var value = score[field];
-        //if the value is a string and the search value is a substring of the value
-        if (typeof value === 'string' && value.toLowerCase().includes(search.toLowerCase())) {
-          //add the score to the searchScores array with the field that has the search value
-          score.field = field;
-          score.id = score._id;
-          searchScores.push(score);
-          break;
+    //split the search terms by space
+    search = search.split(' ');
+    //search each term
+    for (var k = 0; k < search.length; k++) {
+      var searchTerm = search[k];
+      for (var i = 0; i < scores.length; i++) {
+        //get the score
+        var score = scores[i];
+        //get the score fields
+        var fields = Object.keys(score);
+        //remove the _id field, number_of_copies, and number_of_originals
+        fields.splice(fields.indexOf('_id'), 1);
+        fields.splice(fields.indexOf('number_of_copies'), 1);
+        fields.splice(fields.indexOf('number_of_originals'), 1);
+        //search the fields for the search value
+        for (var j = 0; j < fields.length; j++) {
+          //get the field
+          var field = fields[j];
+          //get the value of the field
+          var value = score[field];
+          //if the value is a string and the search value is a substring of the value
+          if (typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase())) {
+            //add the score to the searchScores array with the field that has the search value
+            score.field = field;
+            score.id = score._id;
+            //generate a value that is the value with the search term bolded in HTML
+            score.value = value.replace(new RegExp(searchTerm, 'gi'), function (str) {
+              return '<strong>' + str + '</strong>';
+            });
+            searchScores.push(score);
+            break;
+          }
         }
       }
-    }
     
 
     console.log(searchScores);

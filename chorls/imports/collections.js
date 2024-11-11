@@ -4,12 +4,22 @@ import { Roles } from 'meteor/alanning:roles'
 
 
 //Collections
+//Scores 
 export const Scores =  new Mongo.Collection('scores');
+
+//organizations have name, custom url, and a list of user ids, and an invite key
+Organizations = new Mongo.Collection('organizations');
 
 //publish the scores
 if (Meteor.isServer) {
+  //publish scores that belong to the users organization
   Meteor.publish('scores', function() {
-    return Scores.find({});
+    if (this.userId) {
+      user = Meteor.users.findOne({ _id: this.userId });
+      return Scores.find({ organization: user.organization });
+    } else {
+      this.ready()
+    }
   });
 }
 

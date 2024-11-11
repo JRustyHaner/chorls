@@ -22,16 +22,24 @@ Meteor.startup(async function () {
       //section: section,
       //tags: tags,
       //notes: notes,
+      //history: history: {action, date, user}
 
 Meteor.methods({
   //method to log to server console
   'serverConsole': function(message){
     console.log("Client message: " + message);
   },
+  //method to add an organization
+
   // method to add scores
   'addScore': function(score) {
     console.log("Adding score: " + score.title, score.composer, score.lyricist, score.voiceType, score.number_of_copies, score.notes);
     // insert the score into the database
+    newHistory = {
+      action: "Added",
+      date: new Date(),
+      user: Meteor.userId(),
+    }
     Scores.insertAsync({
       title: score.title,
       composer: score.composer,
@@ -43,6 +51,7 @@ Meteor.methods({
       section: score.section,
       tags: score.tags,
       notes: score.notes,
+      history: [],
 
     });
     return "Score added";
@@ -54,6 +63,13 @@ Meteor.methods({
   },
   'updateScore': function(score) {
     console.log("Updating score: " + score._id);
+    //find the score schange and log those changes in the history
+    newHistory = {
+      action: "Updated",
+      date: new Date(),
+      user: Meteor.userId(),
+    }
+    score.history.push(newHistory);
     Scores.updateAsync({_id: score._id}, {
       title: score.title,
       composer: score.composer,
@@ -65,18 +81,19 @@ Meteor.methods({
       section: score.section,
       tags: score.tags,
       notes: score.notes,
-
-      
-      
+      history: score.history,
     });
     return "Score updated";
   },
   //user management, roles are admin and user. We use allanning:roles package
-  'addUser': function(email, password, role) {
-    console.log("Adding user: " + email);
+  'addUser': function(email, password, role, organization_key) {
+    //get the correct organization from the key
+    org = Organizations.findOneAsync({key: organization_key});
+    console.log("Adding user: " + email + " to organization: " + org.name);
     Accounts.createUser({
       email: email,
       password: password,
+      organization: org._id,
     });
     user = Meteor.users.findOneAsync({email: email});
     Roles.addUsersToRolesAsync(user._id, role);
@@ -86,6 +103,18 @@ Meteor.methods({
     console.log("Deleting user: " + userId);
     Meteor.users.removeAsync({_id: userId});
     return "User deleted";
+  },
+  'removeUserFromOrganization': function(userId) {
+    console.log("Removing user from organization: " + userId);
+    Meteor.users.updateAsync({_id: userId}, {$unset: {organization: ""}});
+    return "User removed from organization";
+  },
+  'addUserToOrganization': function(userId, organization_key) {
+    //get the correct organization from the key
+    org = Organizations.findOneAsync({key: organization_key});
+    console.log("Adding user to organization: " + userId + " to organization: " + org.name);
+    Meteor.users.updateAsync({_id: userId}, {$set: {organization: org._id}});
+    return "User added to organization";
   },
   'updateUser': function(userId, email, password) {
     console.log("Updating user: " + userId);
