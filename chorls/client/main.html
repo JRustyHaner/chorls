@@ -22,7 +22,17 @@
       </div>
       <div class="row justify-content-center">
         <div class="col-md-3 col-sm-12 align-self-center text-center">
-          <form id="loginForm">
+          <!-- tab menu for showing login form -->
+          <ul class="nav nav-tabs" id="loginTabs">
+            <li class="nav-item">
+              <a class="nav-link active" id="loginTab" data-toggle="tab" href="#login">Log In</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="signupTab" data-toggle="tab" href="#signup">Register</a>
+            </li>
+          </ul>
+          <!-- login form -->
+          <form id="loginForm" class="tab-content">
             <div class="mb-3">
               <label for="email" class="form-label">Email address</label>
               <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
@@ -30,17 +40,85 @@
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
               <input type="password" class="form-control" id="password">
+              <button type="submit" class="btn btn-primary" id="login">Log In</button>
             </div>
-            <button type="submit" class="btn btn-primary" id="login">Log In</button>
-            <button type="submit" class="btn btn-primary" id="signup">Register</button>
+
           </form>
+          <!-- signup form -->
+          <form id="signupForm" class="d-none tab-content">
+            <div class="mb-3">
+              <label for="signupEmail" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="signupEmail" aria-describedby="emailHelp">
+            </div>
+            <div class="mb-3">
+              <label for="signupPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="signupPassword">
+            </div>
+            <!-- organization code, optional. with what's this tooltip -->
+            <div class="mb-3">
+              <label for="organizationCode" class="form-label
+              ">Organization Code <a href="#" data-toggle="tooltip" title="If you are a member of a choir, enter the organization code here. Get it from your choir director. If
+              you are creating a new choir, leave this blank.
+              ">What's this?</a></label>
+              <input type="text" class="form-control" id="organizationCode">
+            </div>
+            <button type="submit" class="btn btn-primary" id="register">Register</button>
+          </form>
+                    
         </div>
-       
       </div>
     </div>
             {{> footer}}
       
       
+</template>
+
+<!-- organization edit page -->
+<template name="organization">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <h2>Organization Settings</h2>
+        <hr>
+        <form>
+          <div class="form-group
+          ">
+            <label for="organization_name">Organization Name</label>
+            <input type="text" class="form-control" id="organization_name" value="{{organization.name}}">
+          </div>
+          <div class="form-group">
+            <label for="organization_code">Organization Code</label>
+            <input type="text" class="form-control" id="organization_code" value="{{organization.code}}">
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit_organization">Save Changes</button>
+        </form>
+        <!-- list users and roles with promote, demote, and delete buttons -->
+        <h3>Users</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each users}}
+              <tr>
+                <td>{{this.email}}</td>
+                <td>{{this.role}}</td>
+                <td>
+                  <button class="btn btn-primary" id="promote_user" data-user="{{this._id}}">Promote</button>
+                  <button class="btn btn-primary" id="demote_user" data-user="{{this._id}}">Demote</button>
+                  <button class="btn btn-danger" id="delete_user" data-user="{{this._id}}">Delete</button>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </template>
 
 <template name="footer">
@@ -97,6 +175,7 @@
               <a class="dropdown-item" href="#" id="admin">Admin</a>
               {{/if}}
               <a class="dropdown-item" href="#" id="listAll">List All</a>
+              <a class="dropdown-item" href="#" id="importexport">Import/Export</a>
               <a class="dropdown-item" href="#" id="logout">Log Out</a>
             </div>
             </div>
@@ -114,7 +193,7 @@
               {{#each searchOptions}}
                 <a href="#" class="list-group-item list-group-item-action" id="view_score" data-score="{{this.id}}">
                   <!-- title should be the matching field and the title of the score -->
-                  <h5 class="list-group-item-heading">{{this.field}}: {{this.title}}</h5>
+                  <h5 class="list-group-item-heading">{{this.field}}: {{{this.value}}}</h5>
                   <!-- subtitle should be the composer and arranger in grey -->
                   <p class="list-group
                   -item-text text-muted">{{this.composer}} {{#if this.arranger}} arr {{this.arranger}} {{/if}}</p>
@@ -127,17 +206,34 @@
           </div>
           {{/if}}
           
-
-
-
-
-      
         </div>
       </div>
     </header>
 
     {{/if}}
 
+</template>
+
+<!--import/export template Import is a file form, export is a link -->
+<template name="importexport">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <h2>Import/Export</h2>
+        <hr>
+        <h3>Import</h3>
+        <form>
+          <div class="form-group">
+            <label for="import_file">Import Scores</label>
+            <input type="file" class="form-control-file" id="import_file">
+          </div>
+          <button type="submit" class="btn btn-primary" id="import">Import</button>
+        </form>
+        <h3>Export</h3>
+        <a href="#" class="btn btn-primary" id="export">Export Scores</a>
+      </div>
+    </div>
+  </div>
 </template>
 
 <!-- list all scores, filterable by voice type, composer, arranger, and tags -->
