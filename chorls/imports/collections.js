@@ -15,8 +15,7 @@ if (Meteor.isServer) {
   //publish scores that belong to the users organization
   Meteor.publish('scores', function() {
     if (this.userId) {
-      user = Meteor.users.findOneAsync({ _id: this.userId });
-      return Scores.find({ organization: user.organization });
+      return Scores.find({});
     } else {
       this.ready()
     }
