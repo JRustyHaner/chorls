@@ -1,7 +1,9 @@
 import { Meteor } from 'meteor/meteor';
 import { Scores } from '../imports/collections';
+import { Organizations } from '../imports/collections';
 import { Accounts } from "meteor/accounts-base";
 import { Roles } from 'meteor/alanning:roles';
+import { Random } from 'meteor/random';
 
 Meteor.startup(async function () {
   let user;
@@ -85,19 +87,71 @@ Meteor.methods({
     });
     return "Score updated";
   },
+  'importScores': function(scores) {
+    console.log("Importing scores");
+    for (score in scores) {
+      Scores.insertAsync({
+        title: score.title,
+        composer: score.composer,
+        arranger: score.arranger,
+        voiceType: score.voiceType,
+        number_of_copies: score.number_of_copies,
+        number_of_originals: score.number_of_originals,
+        library_number: score.library_number,
+        section: score.section,
+        tags: score.tags,
+        notes: score.notes,
+        history: []
+      });
+    }
+    return "Scores imported";
+  },
   //user management, roles are admin and user. We use allanning:roles package
-  'addUser': function(email, password, role, organization_key) {
-    //get the correct organization from the key
-    org = Organizations.findOneAsync({key: organization_key});
-    console.log("Adding user: " + email + " to organization: " + org.name);
-    Accounts.createUser({
-      email: email,
-      password: password,
-      organization: org._id,
-    });
-    user = Meteor.users.findOneAsync({email: email});
-    Roles.addUsersToRolesAsync(user._id, role);
-    return "User added";
+  'registerUser': async function(newuser) {
+    console.log("registerUser: ", JSON.stringify(newuser, null, 2));
+    try {
+      const username = newuser.username;
+      const password = newuser.password;
+      const organization_key = newuser.organization_key;
+      let org;
+      let key;
+      let user;
+      const role = 'user';
+
+      // Check if the user already exists
+      const existingUser = Accounts.findUserByEmail(username);
+      if (existingUser) {
+        throw new Meteor.Error(403, 'User already exists');
+      }
+
+      // Get the correct organization from the key, if not blank
+      if (organization_key != "") {
+        org = await Organizations.findOneAsync({ key: organization_key });
+        console.log("Adding user: " + username + " to organization: " + org.name);
+      } else {
+        // Create an organization for the user and generate a key
+        key = Random.id();
+        console.log("Creating organization for user: " + username + " with key: " + key);
+        org = await Organizations.insertAsync({
+          name: username,
+          key: key,
+          users: [username],
+        });
+      }
+
+      const userId = Accounts.createUser({
+        email: username,
+        password: password,
+        organization: org._id,
+      });
+
+      // Add user to roles
+      await Roles.addUsersToRolesAsync(userId, role);
+      return { status: "success", message: "User added" };
+    } catch (error) {
+      console.log("Error adding user: " + error);
+      return { status: "error", message: error.message };
+    }
   },
   'deleteUser': function(userId) {
     console.log("Deleting user: " + userId);

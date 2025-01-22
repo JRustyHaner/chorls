@@ -5,7 +5,7 @@ import { Mongo } from 'meteor/mongo';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
 import { BlazeLayout } from 'meteor/pwix:blaze-layout';
 import { Accounts } from 'meteor/accounts-base';
-
+import Papa from 'papaparse';
 //roles
 import { Roles } from 'meteor/alanning:roles';
 
@@ -155,10 +155,14 @@ Template.searchbar.events({
           }
         }
       }
-    
-
+    }
     console.log(searchScores);
     instance.searchOptions.set(searchScores);
+  },
+  'click #importexport'(event, instance) {
+    event.preventDefault();
+    //redirect to the importexport page
+    BlazeLayout.render('main', {content: 'importexport'});
   },
   //if the mouse leaves or is clicked outside of the search bar, clear the search options
   'click #outside'(event, instance) {
@@ -202,6 +206,56 @@ Template.view_score.helpers({
     return Template.instance().edit.get();
   }
 });
+
+//importexport events
+Template.importexport.events({
+  //import button click, import_file is the id for the file field
+  'click #import'(event, instance) {
+    event.preventDefault();
+    //get the file from the input field
+    var file = document.getElementById('import_file').files[0];
+    //if there is no file, alert the user
+    if (!file) {
+      alert('No file selected');
+      return;
+    }
+    //read the file (csv to json)
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      //parse the csv
+      var csv = e.target.result;
+      var scores = Papa.parse(csv, { header: true }).data;
+      //make a meteor async call to import the scores
+      Meteor.call('importScores', scores, function(error, result) {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log(result);
+        }
+      });
+      alert('Scores Imported');
+    };
+  },
+  //export button click
+  'click #export'(event, instance) {
+    event.preventDefault();
+    //make a meteor async call to export the scores to csv. Call the collecion directly
+    allScores = Scores.find({}).fetch();
+    //convert to csv and download
+    var csv = Papa.unparse(allScores, { header: true });
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'scores.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+});
+    
 
 //view score events
 Template.view_score.events({
@@ -412,7 +466,10 @@ Template.userAdmin.events({
     var email = document.getElementById('email').value;
     var role = document.getElementById('role').value;
     //make a meteor async call to add a user
-    Meteor.call('addUser', email, role, function(error, result) {
+    Meteor.call('registerUser', {
+      email: email,
+      role: role,
+    }, function(error, result) {
       if (error) {
         console.log(error);
       } else {
@@ -612,6 +669,7 @@ Template.login.events({
     //get the username and password from the input fields
     var username = document.getElementById('email').value;
     var password = document.getElementById('password').value;
+    Meteor.callAsync('serverConsole', 'logging in as ' + username);
     //make a meteor async call to login
     Meteor.loginWithPassword(username, password, async function(error) {
       if (error) {
@@ -632,27 +690,101 @@ Template.login.events({
       }
     });
   },
-  'click #register'(event, instance) {
+  'click #register': async function(event, instance) {
     event.preventDefault();
     console.log("registering");
     //get the username and password from the input fields
-    var username = document.getElementById('email').value;
-    var password = document.getElementById('password').value;
+    var signupEmail = document.getElementById('signupEmail').value;
+    var signupPassword = document.getElementById('signupPassword').value;
+    var organization_key = document.getElementById('organizationCode').value;
+    console.log(signupEmail, signupPassword, organization_key);
     //make a meteor async call to register.
-    Accounts.createUser({
-      username: username,
-      password: password,
-    }, function(error) {
+    let newuser = await Meteor.callAsync('registerUser', 
+      {
+      username: signupEmail,
+      password: signupPassword,
+      organization_key: organization_key
+      }
+    );
+    if (newuser.status == 'error') {
+      console.log(newuser.message);
+      alert("Error registering user: " + newuser.message);
+      BlazeLayout.render('main', {content: 'login'});
+    } else {
+      console.log("registered");
+      Meteor.call('serverConsole', 'registered user ' + username);
+      //login the user
+      Meteor.loginWithPassword(username, password, function(error) {
+        //if the organization is new, redirect to the organization page, otherwise redirect to the dashboard
+        if (error) {
+          console.log(error);
+          alert('Invalid Username or Password, please try again');
+        }
+        if (new_organization) {
+          BlazeLayout.render('main', {content: 'organization'});
+        } else {
+          BlazeLayout.render('main', {content: 'dashboard', scores: Scores.find({}).fetch()});
+        }
+      });
+    }
+
+  },
+  'click .nav-tabs'(event, instance) {
+    //if loginForm is visible, hide it and show signupForm, or vice versa
+    event.preventDefault();
+    var loginForm = document.getElementById('loginForm');
+    var signupForm = document.getElementById('signupForm');
+    //we know by d-none if the form is visible or not
+    if (loginForm.classList.contains('d-none')) {
+      loginForm.classList.remove('d-none');
+      signupForm.classList.add('d-none');
+    } else {
+      loginForm.classList.add('d-none');
+      signupForm.classList.remove('d-none');
+    }
+  }
+
+});
+
+//organization page helpers
+//organization helper returns the current users organization
+Template.organization.helpers({
+  organization: function() {
+    //get the current user
+    var user = Meteor.user();
+    //get the organization
+    var organization = Organizations.findOne({ _id: user.organization });
+    //map the users in the organization to their emails
+    organization.users = organization.user_ids.map(function(user_id) {
+      return Meteor.users.findOne({ _id: user_id }).username;
+    });
+    return organization;
+  }
+});
+
+//organization page events, update the organization name and url
+Template.organization.events({
+  'click #update_organization'(event, instance) {
+    event.preventDefault();
+    //get the organization name and url from the input fields
+    var name = document.getElementById('organization_name').value;
+    var url = document.getElementById('organization_url').value;
+    //make a meteor async call to update the organization
+    Meteor.call('updateOrganization', {
+      name: name,
+      url: url,
+    }, function(error, result) {
       if (error) {
         console.log(error);
-        BlazeLayout.render('main', {content: 'login'});
       } else {
-        console.log("registered");
-        BlazeLayout.render('main', {content: 'dashboard', scores: Scores.find({}).fetch()});
+        console.log(result);
       }
     });
-  },
+    alert('Organization Updated');
+  }
 });
+
+
 
 //listAll template. Needs ro have a allScores helper and a allFields helper that contains all unique field values for the tag, section, and voiceType fields
 //listAll template also needs a reactive var for the filters, it should be an array of objects with the fields tag, section, and voiceType
