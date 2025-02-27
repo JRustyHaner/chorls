@@ -5,11 +5,10 @@ import { Accounts } from "meteor/accounts-base";
 import { Roles } from 'meteor/alanning:roles';
 import { Random } from 'meteor/random';
 
-Meteor.startup(async function () {
-  let user;
-  // code to run on server at startup
-  //define roles
-  console.log("Starting up");
+Meteor.startup(async  function () {
+  console.log("Server started");
+  Roles.createRoleAsync("admin");
+  Roles.createRoleAsync("user");
 });
 
 //scores arel
@@ -53,8 +52,8 @@ Meteor.methods({
       section: score.section,
       tags: score.tags,
       notes: score.notes,
+      organizationId: Meteor.user().organization,
       history: [],
-
     });
     return "Score added";
   },
@@ -83,13 +82,15 @@ Meteor.methods({
       section: score.section,
       tags: score.tags,
       notes: score.notes,
+      organizationId: Meteor.user().organization,
       history: score.history,
     });
     return "Score updated";
   },
-  'importScores': function(scores) {
-    console.log("Importing scores");
-    for (score in scores) {
+  'importScores': async function(scores) {
+    let org = await Organizations.findOneAsync({ _id: Meteor.user().organization });
+    console.log("Importing scores to organization: " + org._id);
+    for (let score of scores) {
       Scores.insertAsync({
         title: score.title,
         composer: score.composer,
@@ -101,7 +102,8 @@ Meteor.methods({
         section: score.section,
         tags: score.tags,
         notes: score.notes,
-        history: []
+        organizationId: org._id,
+        history: ["Imported by " + Meteor.userId()],
       });
     }
     return "Scores imported";
@@ -116,13 +118,7 @@ Meteor.methods({
       let org;
       let key;
       let user;
-      const role = 'user';
-
-      // Check if the user already exists
-      const existingUser = Accounts.findUserByEmail(username);
-      if (existingUser) {
-        throw new Meteor.Error(403, 'User already exists');
-      }
+      let role = 'user'
 
       // Get the correct organization from the key, if not blank
       if (organization_key != "") {
@@ -135,18 +131,22 @@ Meteor.methods({
         org = await Organizations.insertAsync({
           name: username,
           key: key,
-          users: [username],
+          admin: username,
+          editors: [],
         });
+        role = 'admin';
       }
 
-      const userId = Accounts.createUser({
+      const  userId = await Accounts.createUserAsync({
         email: username,
         password: password,
-        organization: org._id,
-      });
-
+      })
+      //add the user to the organization
+      Meteor.users.updateAsync({_id: userId}, {$set: {organization: org._id}});
+      console.log("User created: " + userId);
       // Add user to roles
       await Roles.addUsersToRolesAsync(userId, role);
+      console.log("User is in Roles: " + await Roles.userIsInRoleAsync(userId, role));
       return { status: "success", message: "User added" };
     } catch (error) {
       console.log("Error adding user: " + error);
@@ -193,4 +193,4 @@ Meteor.methods({
     Roles.removeUsersFromRolesAsync(userId, "admin");
     return "User demoted";
   },
-})
+});

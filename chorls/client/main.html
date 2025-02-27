@@ -1,88 +1,72 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <title>CHurch of the River Library of Scores (CHoRLS)</title>
+  <title>CHoRLS</title>
 </head>
 
 
 <template name="login">
-       <div class="container d-grid gap-3 align-items-center">
-   
-        <div class="row vh-5 justify-content-center">
-          
-            <img src="/images/logo.png" class="img-fluid" alt="Responsive image" style="width: 300px; height: 300px;">
-            
-          
-        </div>
-        
+  <div class="container d-grid gap-3 align-items-center">
+    <div class="row vh-5 justify-content-center">
+      <img src="/images/logo.png" class="img-fluid" alt="Responsive image" style="width: 300px; height: 300px;">
+    </div>
 
-      <!--login form, username and password. Also acts as a signup -->
-      <div class="row row-cols-1 justify-content-center text-center">
-          <p class="lead justify-content-center">Log In or Register to access the CHoRLS Library</p>
-      </div>
-      <div class="row justify-content-center">
-        <div class="col-md-3 col-sm-12 align-self-center text-center">
-          <!-- tab menu for showing login form -->
-          <ul class="nav nav-tabs" id="loginTabs">
-            <li class="nav-item">
-              <a class="nav-link active" id="loginTab" data-toggle="tab" href="#login">Log In</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="signupTab" data-toggle="tab" href="#signup">Register</a>
-            </li>
-          </ul>
-          <!-- login form -->
-          <form id="loginForm" class="tab-content">
-            <div class="mb-3">
-              <label for="email" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
-            </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="password">
-              <button type="submit" class="btn btn-primary" id="login">Log In</button>
-            </div>
-
-          </form>
-          <!-- signup form -->
-          <form id="signupForm" class="d-none tab-content">
-            <div class="mb-3">
-              <label for="signupEmail" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="signupEmail" aria-describedby="emailHelp">
-            </div>
-            <div class="mb-3">
-              <label for="signupPassword" class="form-label">Password</label>
-              <input type="password" class="form-control" id="signupPassword">
-            </div>
-            <!-- organization code, optional. with what's this tooltip -->
-            <div class="mb-3">
-              <label for="organizationCode" class="form-label
-              ">Organization Code <a href="#" data-toggle="tooltip" title="If you are a member of a choir, enter the organization code here. Get it from your choir director. If
-              you are creating a new choir, leave this blank.
-              ">What's this?</a></label>
-              <input type="text" class="form-control" id="organizationCode">
-            </div>
-            <button type="submit" class="btn btn-primary" id="register">Register</button>
-          </form>
-                    
-        </div>
+    <div class="row justify-content-center">
+      <div class="col-md-3 col-sm-12 align-self-center text-center">
+        <!-- tab menu for showing login form -->
+        <ul class="nav nav-tabs" id="loginTabs">
+          <li class="nav-item">
+            <a class="nav-link active" id="loginTab" data-toggle="tab" href="#login">Log In</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="signupTab" data-toggle="tab" href="#signup">Register</a>
+          </li>
+        </ul>
+        <!-- login form -->
+        <form id="loginForm" class="tab-content mt-3">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="login">Log In</button>
+        </form>
+        <!-- signup form -->
+        <form id="signupForm" class="d-none tab-content mt-3">
+          <div class="mb-3">
+            <label for="signupEmail" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="signupEmail" aria-describedby="emailHelp">
+          </div>
+          <div class="mb-3">
+            <label for="signupPassword" class="form-label">Password</label>
+            <input type="password" class="form-control" id="signupPassword">
+          </div>
+          <!-- organization code, optional. with what's this tooltip -->
+          <div class="mb-3">
+            <label for="organizationCode" class="form-label">Organization Code 
+              <a href="#" data-toggle="tooltip" title="If you are a member of a choir, enter the organization code here. Get it from your choir director. If you are creating a new choir, leave this blank.">What's this?</a>
+            </label>
+            <input type="text" class="form-control" id="organizationCode">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="register">Register</button>
+        </form>
       </div>
     </div>
-            {{> footer}}
-      
-      
+  </div>
+  {{> footer}}
 </template>
 
-<!-- organization edit page -->
-<template name="organization">
+<!-- organization edit page --><template name="organization">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-6">
         <h2>Organization Settings</h2>
         <hr>
         <form>
-          <div class="form-group
-          ">
+          <div class="form-group">
             <label for="organization_name">Organization Name</label>
             <input type="text" class="form-control" id="organization_name" value="{{organization.name}}">
           </div>
@@ -171,9 +155,7 @@
               </svg>
             </button>
             <div class="dropdown-menu" aria-labelledby="userMenu">
-              {{#if isInRole 'admin'}}
-              <a class="dropdown-item" href="#" id="admin">Admin</a>
-              {{/if}}
+              <a class="dropdown-item" href="#" id="organization">Organization</a>
               <a class="dropdown-item" href="#" id="listAll">List All</a>
               <a class="dropdown-item" href="#" id="importexport">Import/Export</a>
               <a class="dropdown-item" href="#" id="logout">Log Out</a>
@@ -585,7 +567,9 @@
         </div>
         <button class="btn btn-primary" id="edit_score">Edit Mode</button>
         <button class="btn btn-success" id="save_score" disabled>Save Changes</button>
-        <button class="btn btn-danger" id="delete_score" disabled>Delete</button>
+        {{#if isAdministrator}}
+          <button class="btn btn-danger" id="delete_score" disabled>Delete</button>
+        {{/if}}
       </div>
     </div>
   </div>
