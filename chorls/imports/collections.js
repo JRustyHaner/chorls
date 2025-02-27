@@ -10,29 +10,34 @@ export const Scores =  new Mongo.Collection('scores');
 //organizations have name, custom url, and a list of user ids, and an invite key
 export const Organizations = new Mongo.Collection('organizations');
 
-//publish the scores
+// Publish the scores that belong to the user's organization
 if (Meteor.isServer) {
-  //publish scores that belong to the users organization
-  Meteor.publish('scores', function() {
+  Meteor.publish('scores', async function() {
     if (this.userId) {
-      return Scores.find({});
+      const user = await Meteor.users.findOneAsync(this.userId);
+      console.log("Publishing scores for organization: " + user.organization);
+      return Scores.find({ organizationId: user.organization });
     } else {
-      this.ready()
+      this.ready();
+    }
+  });
+
+  // Publish the user's organization
+  Meteor.publish('organizations', async function() {
+    if (this.userId) {
+      const user = await Meteor.users.findOneAsync(this.userId);
+      return Organizations.findOneAsync({ _id: user.organization });
+    } else {
+      this.ready();
     }
   });
 }
 
-Meteor.publish(null, function () {
+//Publish the users roles
+Meteor.publish(null, function() {
   if (this.userId) {
-    return Meteor.roleAssignment.find({ 'user._id': this.userId });
+    return Meteor.roles.find({ 'users': this.userId });
   } else {
-    this.ready()
-  }
-})
-
-//if the user is an admin, give all users information
-Meteor.publish(null, async function() {
-  if (Roles.userIsInRoleAsync(this.userId, 'admin')) {
-    return Meteor.users.find({});
+    this.ready();
   }
 });

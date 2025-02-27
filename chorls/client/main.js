@@ -56,15 +56,17 @@ Template.searchbar.helpers({
   },
   search() {
     return Template.instance().search.get();
-  },
-  isAdministrator: async function() {
-    return await Roles.userIsInRoleAsync(Meteor.userId(), 'admin');
   }
 });
 
 //template for isUserLoggedIn
 Template.registerHelper('isUserLoggedIn', function() {
   return Meteor.userId();
+});
+
+//template to check if user is admin
+Template.registerHelper('isAdmin', function() {
+  return Roles.userIsInRole(Meteor.userId(), 'admin');
 });
 
 //logo image
@@ -75,6 +77,11 @@ Template.registerHelper('logo', function() {
 
 //general events
 Template.searchbar.events({
+  'click #organization'(event, instance) {
+    event.preventDefault();
+    //redirect to the organization page
+    BlazeLayout.render('main', {content: 'organization'});
+  },
   'click #listAll'(event, instance) {
     event.preventDefault();
     //redirect to the listAll page
@@ -212,6 +219,7 @@ Template.importexport.events({
   //import button click, import_file is the id for the file field
   'click #import'(event, instance) {
     event.preventDefault();
+    console.log("importing");
     //get the file from the input field
     var file = document.getElementById('import_file').files[0];
     //if there is no file, alert the user
@@ -235,6 +243,7 @@ Template.importexport.events({
       });
       alert('Scores Imported');
     };
+    reader.readAsText(file);
   },
   //export button click
   'click #export'(event, instance) {
@@ -343,20 +352,24 @@ Template.view_score.events({
   },
   //delete button click, deletes the score
   'click #delete_score'(event, instance) {
-    var scoreID = document.getElementById('view_id').innerHTML;
-    //get the selected score
-    var score = instance.selectedScore.get();
-    //make a meteor async call to delete the score
-    Meteor.call('deleteScore', scoreID , function(error, result) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log(result);
-      }
-    });
-    alert('Score Deleted');
-    //redirect to the home page
-    BlazeLayout.render('main', {content: 'dashboard'});
+    event.preventDefault();
+    const scoreID = document.getElementById('view_id').innerHTML;
+
+    // Confirm deletion
+    if (confirm('Are you sure you want to delete this score?')) {
+      // Make a Meteor call to delete the score
+      Meteor.call('deleteScore', scoreID, function(error, result) {
+        if (error) {
+          console.log(error);
+          alert('Error deleting score: ' + error.reason);
+        } else {
+          console.log(result);
+          alert('Score Deleted');
+          // Redirect to the home page
+          BlazeLayout.render('main', { content: 'dashboard' });
+        }
+      });
+    }
   },
   //voice type buttons (view_soprano, view_alto, view_tenor, view_bass) adds the voice type to the view_voice_type
   'click #view_soprano'(event, instance) {
@@ -712,9 +725,9 @@ Template.login.events({
       BlazeLayout.render('main', {content: 'login'});
     } else {
       console.log("registered");
-      Meteor.call('serverConsole', 'registered user ' + username);
+      Meteor.call('serverConsole', 'registered user ' + signupEmail);
       //login the user
-      Meteor.loginWithPassword(username, password, function(error) {
+      Meteor.loginWithPassword(signupEmail, signupPassword, function(error) {
         //if the organization is new, redirect to the organization page, otherwise redirect to the dashboard
         if (error) {
           console.log(error);
